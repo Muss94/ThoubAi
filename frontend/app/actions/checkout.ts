@@ -1,0 +1,84 @@
+'use server';
+
+import Stripe from 'stripe';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
+import { headers } from 'next/headers';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-02-24-preview' as any,
+});
+
+export async function createCheckoutSession(data: {
+    measurementId: string;
+    config: {
+        fabric: string;
+        pattern: string;
+        style: string;
+        closure: string;
+        pocket: boolean;
+    };
+}) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        const origin = (await headers()).get('origin');
+
+        // Verify measurement exists and belongs to user
+        const measurement = await prisma.measurement.findUnique({
+            where: { id: data.measurementId },
+        });
+
+        if (!measurement || measurement.userId !== session.user.id) {
+            return { error: 'Invalid measurements' };
+        }
+
+        // Create the Stripe Checkout Session
+        const stripeSession = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd', // or 'sar' if supported by your stripe account
+                        product_data: {
+                            name: `Bespoke Thoub - ${data.config.style}`,
+                            description: `Custom tailored Thobe in ${data.config.fabric}.`,
+                        },
+                        unit_amount: 49900, // $499.00
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${origin}/try-on?front_image_id=${measurement.frontImageId}`,
+            customer_email: session.user.email!,
+            metadata: {
+                userId: session.user.id,
+                measurementId: data.measurementId,
+                config: JSON.stringify(data.config),
+            },
+        });
+
+        // Create a pending order in our database
+        await prisma.order.create({
+            data: {
+                userId: session.user.id,
+                measurementId: data.measurementId,
+                config: data.config,
+                total: 49900,
+                status: 'PENDING',
+                stripeSessionId: stripeSession.id,
+            },
+        });
+
+        return { url: stripeSession.url };
+    } catch (error: any) {
+        console.error('Stripe Session Error:', error);
+        return { error: error.message || 'Payment initiation failed' };
+    }
+}
