@@ -141,10 +141,12 @@ export default function CapturePage() {
 
             if (!res.ok) {
                 const err = await res.json();
+                console.error("Fetch error details:", err);
                 throw new Error(err.detail || "Measurement failed");
             }
 
             const data = await res.json();
+            console.log("Measurement success:", data);
 
             // Deduct measurement credit after successful measurement
             const deductResult = await deductMeasurementCredit();
