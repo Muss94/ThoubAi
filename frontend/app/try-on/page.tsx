@@ -213,8 +213,14 @@ function TryOnContent() {
             }
 
         } catch (error: any) {
-            console.error(error);
-            alert("Error: " + error.message);
+            console.error('Try-on error:', error);
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+            const fullUrl = `${backendUrl}/try-on`;
+            const errorMessage = `Generation failed: ${error.message || 'Unknown error'}. 
+            Backend URL: ${backendUrl}
+            Attempted to fetch: ${fullUrl}`;
+
+            alert(errorMessage);
         } finally {
             setLoading(false);
         }

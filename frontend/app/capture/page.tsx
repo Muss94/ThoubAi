@@ -168,8 +168,14 @@ export default function CapturePage() {
             router.push(`/try-on?${query}`);
 
         } catch (error: any) {
-            console.error(error);
-            alert("Error: " + error.message);
+            console.error('Process error:', error);
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+            const fullUrl = `${backendUrl}/measure`;
+            const errorMessage = `Failed to process: ${error.message || 'Unknown error'}. 
+            Backend URL: ${backendUrl}
+            Attempted to fetch: ${fullUrl}`;
+
+            alert(errorMessage);
         } finally {
             setProcessing(false);
         }
