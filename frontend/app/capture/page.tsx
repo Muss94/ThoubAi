@@ -127,7 +127,7 @@ export default function CapturePage() {
 
         try {
             // Start the API call and a 2-second timer simultaneously
-            const apiPromise = fetch('http://localhost:8000/measure', {
+            const apiPromise = fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/measure`, {
                 method: 'POST',
                 headers: {
                     'X-Thoub-API-Key': process.env.NEXT_PUBLIC_THOUB_API_KEY || ''

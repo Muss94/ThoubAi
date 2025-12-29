@@ -15,7 +15,7 @@ export default function ProfileImageUploader({ measurementId, existingImageId }:
 
     // If we have an existing image ID, it's served from our backend uploads directory
     const imageUrl = existingImageId
-        ? `http://localhost:8000/uploads/${existingImageId}`
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${existingImageId}`
         : null;
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +29,7 @@ export default function ProfileImageUploader({ measurementId, existingImageId }:
             const formData = new FormData();
             formData.append('image', file);
 
-            const res = await fetch('http://localhost:8000/upload-image', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/upload-image`, {
                 method: 'POST',
                 headers: {
                     'X-Thoub-API-Key': process.env.NEXT_PUBLIC_THOUB_API_KEY || ''

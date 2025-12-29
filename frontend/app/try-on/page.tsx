@@ -153,7 +153,7 @@ function TryOnContent() {
         formData.append("extra_details", "");
 
         try {
-            const res = await fetch('http://localhost:8000/try-on', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/try-on`, {
                 method: 'POST',
                 headers: {
                     'X-Thoub-API-Key': process.env.NEXT_PUBLIC_THOUB_API_KEY || ''

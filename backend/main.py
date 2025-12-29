@@ -203,7 +203,7 @@ async def upload_image(
         filename = os.path.basename(local_path)
         
         # Upload to Supabase if configured
-        public_url = f"http://localhost:8000/uploads/{filename}"
+        public_url = filename
         if supabase:
             with open(local_path, "rb") as f:
                 supabase.storage.from_(SUPABASE_BUCKET).upload(
