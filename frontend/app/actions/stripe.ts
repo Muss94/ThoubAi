@@ -10,7 +10,7 @@ const getStripe = () => {
         throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
     }
     return new Stripe(key, {
-        apiVersion: '2025-02-24-preview' as any,
+        apiVersion: '2024-12-18.acacia' as any,
     });
 };
 
