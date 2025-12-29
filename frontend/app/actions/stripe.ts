@@ -4,19 +4,33 @@ import Stripe from 'stripe';
 import { auth } from '@/auth';
 import { headers } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24-preview' as any,
-});
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+        throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
+    }
+    return new Stripe(key, {
+        apiVersion: '2025-02-24-preview' as any,
+    });
+};
 
 export async function createTopUpSession() {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        return { error: 'Unauthorized' };
-    }
-
     try {
-        const origin = (await headers()).get('origin');
+        console.log('Initiating top-up session...');
+        const stripe = getStripe();
+        const headersList = await headers();
+        const origin = headersList.get('origin') || process.env.NEXTAUTH_URL;
+
+        console.log('User auth session check...');
+        const session = await auth();
+
+        if (!session?.user?.id) {
+            console.log('Auth failed: No user ID found');
+            return { error: 'Unauthorized: Please log in again' };
+        }
+
+        console.log('Creating Stripe session for user:', session.user.id);
+        console.log('Using origin for callbacks:', origin);
 
         // Pack details: £2 for 2 Measurement Credits + 10 Generation Credits
         const checkoutSession = await stripe.checkout.sessions.create({

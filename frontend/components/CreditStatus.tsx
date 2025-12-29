@@ -23,9 +23,10 @@ export default function CreditStatus({ measurementCredits, generationCredits }: 
             } else {
                 alert('Failed to initiate top-up. Please try again.');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Top-up error:', error);
-            alert('Failed to initiate top-up. Please try again.');
+            const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+            alert(`Top-up failed: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
