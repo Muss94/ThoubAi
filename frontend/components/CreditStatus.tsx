@@ -14,7 +14,15 @@ export default function CreditStatus({ measurementCredits, generationCredits }: 
     const handleTopUp = async () => {
         setLoading(true);
         try {
-            await createTopUpSession();
+            const result = await createTopUpSession();
+
+            if (result.error) {
+                alert(result.error);
+            } else if (result.url) {
+                window.location.href = result.url;
+            } else {
+                alert('Failed to initiate top-up. Please try again.');
+            }
         } catch (error) {
             console.error('Top-up error:', error);
             alert('Failed to initiate top-up. Please try again.');
