@@ -9,6 +9,8 @@ import traceback
 import os
 import shutil
 from utils import convert_heic_to_jpg
+from supabase import create_client, Client
+import requests
 
 from fastapi.security import APIKeyHeader
 from fastapi import Depends, Security
@@ -34,6 +36,8 @@ async def get_api_key(api_key: str = Security(api_key_header)):
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://thoub-ai.vercel.app",  # Add your vercel domain
+    "*" # For now allow all to facilitate testing
 ]
 
 app.add_middleware(
@@ -47,6 +51,15 @@ app.add_middleware(
 # Mount the uploads directory to serve static files
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+# Supabase Configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "thoub-images")
+
+supabase: Optional[Client] = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 cutter_service = Cutter()
 mirror_service = NeuralMirror()
@@ -137,10 +150,15 @@ async def try_on(
     api_key: str = Depends(get_api_key)
 ):
     try:
-        # Construct absolute path to the saved image
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-        image_path = os.path.join(UPLOAD_DIR, profile_image_id)
+        image_path = f"uploads/{profile_image_id}"
+        
+        # If not local, try fetching from Supabase
+        if not os.path.exists(image_path) and supabase:
+            print(f"Image not found locally, fetching {profile_image_id} from Supabase...")
+            res = supabase.storage.from_(SUPABASE_BUCKET).download(profile_image_id)
+            os.makedirs("uploads", exist_ok=True)
+            with open(image_path, "wb") as f:
+                f.write(res)
         
         if not os.path.exists(image_path):
              return JSONResponse(status_code=404, content={"error": f"Image not found at {image_path}"})
@@ -157,7 +175,9 @@ async def try_on(
             closure_type, 
             has_pocket, 
             extra_details,
-            profile_image_id
+            profile_image_id,
+            supabase_client=supabase,
+            bucket_name=SUPABASE_BUCKET
         ) # Updated to pass all new params
         
         return result
@@ -172,21 +192,31 @@ async def upload_image(
     api_key: str = Depends(get_api_key)
 ):
     try:
+        # Save Image locally first for conversion
+        local_path = f"uploads/{image.filename}"
         os.makedirs("uploads", exist_ok=True)
-        
-        # Save Image
-        file_path = f"uploads/{image.filename}"
-        with open(file_path, "wb") as buffer:
+        with open(local_path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
         
         # Convert HEIC to JPG if necessary
-        file_path = convert_heic_to_jpg(file_path)
-        filename = os.path.basename(file_path)
+        local_path = convert_heic_to_jpg(local_path)
+        filename = os.path.basename(local_path)
+        
+        # Upload to Supabase if configured
+        public_url = f"http://localhost:8000/uploads/{filename}"
+        if supabase:
+            with open(local_path, "rb") as f:
+                supabase.storage.from_(SUPABASE_BUCKET).upload(
+                    path=filename,
+                    file=f,
+                    file_options={"upsert": "true"}
+                )
+            public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(filename)
             
         return {
             "success": True,
             "filename": filename,
-            "url": f"http://localhost:8000/uploads/{filename}"
+            "url": public_url
         }
     except Exception as e:
         traceback.print_exc()
