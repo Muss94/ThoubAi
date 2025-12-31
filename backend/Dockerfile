@@ -14,8 +14,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-# Use --no-cache-dir to keep image small
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install build tools first
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+
+# Install numpy first as it's a heavy dependency
+RUN pip install --no-cache-dir numpy
+
+# Install remaining requirements with increased timeout
+# Use --verbose to prevent silent timeouts
+RUN pip install --no-cache-dir --default-timeout=100 -v -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
