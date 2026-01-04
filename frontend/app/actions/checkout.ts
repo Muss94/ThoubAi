@@ -129,7 +129,7 @@ export async function getUserOrders() {
                         measurement: true,
                     },
                 },
-            },
+            } as any,
             orderBy: {
                 createdAt: 'desc',
             },
@@ -139,5 +139,32 @@ export async function getUserOrders() {
     } catch (error) {
         console.error('Fetch Orders Error:', error);
         return { error: 'Failed to synchronize artisan ledger' };
+    }
+}
+
+export async function getUserCatalogue() {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        const generations = await prisma.generation.findMany({
+            where: {
+                userId: session.user.id,
+            },
+            include: {
+                measurement: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        return { generations };
+    } catch (error) {
+        console.error('Fetch Catalogue Error:', error);
+        return { error: 'Failed to synchronize artisan catalogue' };
     }
 }

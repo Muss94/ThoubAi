@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { createCheckoutSession } from '@/app/actions/checkout';
+import { createCheckoutSession, getUserCatalogue } from '@/app/actions/checkout';
 import Link from 'next/link';
 
 interface OrderItem {
@@ -25,6 +25,20 @@ interface OrderItem {
     };
 }
 
+interface CatalogueItem {
+    id: string;
+    imageUrl: string;
+    config: any;
+    measurement: {
+        id: string;
+        thobeLength: number;
+        chest: number;
+        sleeve: number;
+        shoulder: number;
+        heightCm: number;
+    };
+}
+
 function CheckoutContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -32,6 +46,11 @@ function CheckoutContent() {
 
     // Commission List (Cart)
     const [orders, setOrders] = useState<OrderItem[]>([]);
+
+    // Catalogue State
+    const [catalogue, setCatalogue] = useState<CatalogueItem[]>([]);
+    const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
+    const [isLoadingCatalogue, setIsLoadingCatalogue] = useState(false);
 
     // Shipping State
     const [shipping, setShipping] = useState({
@@ -80,8 +99,44 @@ function CheckoutContent() {
         }
     }, [session, shipping.name]);
 
-    const addToOrder = () => {
-        alert("Configuration synchronized with your artisan queue.");
+    const handleOpenCatalogue = async () => {
+        setIsCatalogueOpen(true);
+        if (catalogue.length === 0) {
+            setIsLoadingCatalogue(true);
+            try {
+                const result = await getUserCatalogue();
+                if (result.generations) {
+                    setCatalogue(result.generations as any);
+                }
+            } catch (error) {
+                console.error("Failed to fetch catalogue:", error);
+            } finally {
+                setIsLoadingCatalogue(false);
+            }
+        }
+    };
+
+    const addToOrderFromCatalogue = (item: CatalogueItem) => {
+        const newItem: OrderItem = {
+            id: Math.random().toString(36).substr(2, 9),
+            measurementId: item.measurement.id,
+            fabric: item.config.fabric || 'White Cotton',
+            pattern: item.config.pattern || 'Solid',
+            style: item.config.style || 'Traditional',
+            closure: item.config.closure || 'buttons',
+            pocket: item.config.pocket === true,
+            quantity: 1,
+            imageUrl: item.imageUrl,
+            metrics: {
+                length: item.measurement.thobeLength.toString(),
+                chest: item.measurement.chest.toString(),
+                sleeve: item.measurement.sleeve.toString(),
+                shoulder: item.measurement.shoulder.toString(),
+                height: item.measurement.heightCm.toString(),
+            }
+        };
+        setOrders(prev => [...prev, newItem]);
+        setIsCatalogueOpen(false);
     };
 
     const updateQuantity = (id: string, delta: number) => {
@@ -257,7 +312,7 @@ function CheckoutContent() {
                             ))}
 
                             <button
-                                onClick={addToOrder}
+                                onClick={handleOpenCatalogue}
                                 className="w-full py-8 border border-dashed border-white/5 rounded-[2rem] flex items-center justify-center gap-4 hover:border-primary/20 hover:bg-white/5 transition-all group animate-reveal"
                                 style={{ animationDelay: '0.4s' }}
                             >
@@ -366,6 +421,64 @@ function CheckoutContent() {
                     </div>
                 </div>
             </div>
+
+            {/* Catalogue Selection Modal */}
+            {isCatalogueOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-fade-in" onClick={() => setIsCatalogueOpen(false)} />
+                    <div className="relative w-full max-w-5xl bg-zinc-950 border border-white/10 rounded-[3rem] shadow-4xl overflow-hidden animate-zoom-in flex flex-col max-h-[90vh]">
+                        <header className="p-10 border-b border-white/5 flex justify-between items-center">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-2 block">Catalogue Selection</span>
+                                <h2 className="text-4xl font-black uppercase italic tracking-tighter gold-gradient-text">Add from History</h2>
+                            </div>
+                            <button onClick={() => setIsCatalogueOpen(false)} className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                                <span className="text-2xl font-black">×</span>
+                            </button>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-10">
+                            {isLoadingCatalogue ? (
+                                <div className="h-64 flex flex-col items-center justify-center space-y-6">
+                                    <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Synchronizing Artisan Catalogue...</p>
+                                </div>
+                            ) : catalogue.length === 0 ? (
+                                <div className="h-64 flex flex-col items-center justify-center space-y-6">
+                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest">No previous configurations found.</p>
+                                    <Link href="/capture" className="px-8 py-4 bg-primary text-black rounded-xl text-[10px] font-black uppercase tracking-widest">Begin Tailoring</Link>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {catalogue.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="group bg-white/5 border border-white/5 rounded-[2.5rem] p-6 hover:border-primary/40 transition-all cursor-pointer relative"
+                                            onClick={() => addToOrderFromCatalogue(item)}
+                                        >
+                                            <div className="aspect-[4/5] w-full rounded-[1.5rem] overflow-hidden bg-black/40 border border-white/5 mb-6 relative">
+                                                <img src={item.imageUrl} alt="Catalogue Item" className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-700" />
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-primary text-black px-6 py-3 rounded-full">Add to Order</span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">{item.config.style.replace('_collar', '')}</h4>
+                                                        <p className="text-[9px] text-primary/60 font-black uppercase tracking-widest">{item.config.fabric}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Minimal Grid Accent */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(#ffffff 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
         </div>
