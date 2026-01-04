@@ -74,7 +74,7 @@ export async function createCheckoutSession(data: {
                 userId: session.user.id,
                 measurementId: data.measurementId,
                 config: data.config,
-                shippingDetails: data.shippingDetails,
+                shippingDetails: data.shippingDetails as any,
                 total: 49900,
                 status: 'PENDING',
                 stripeSessionId: stripeSession.id,

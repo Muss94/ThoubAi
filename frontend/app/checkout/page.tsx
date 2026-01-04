@@ -44,7 +44,7 @@ function CheckoutContent() {
             router.push('/dashboard');
         }
         if (session?.user?.name && !shipping.name) {
-            setShipping(prev => ({ ...prev, name: session.user.name || '' }));
+            setShipping(prev => ({ ...prev, name: session?.user?.name || '' }));
         }
     }, [measurementId, session, router, shipping.name]);
 
