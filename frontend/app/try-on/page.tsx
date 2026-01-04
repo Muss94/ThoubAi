@@ -170,6 +170,7 @@ function TryOnContent() {
         const finalProfileImageId = extractId(pId);
 
         setLoading(true);
+        setGeneratedImage(null); // Clear previous image to avoid confusion
         const formData = new FormData();
         formData.append("profile_image_id", finalProfileImageId);
         formData.append("texture_id", selectedFabric);
@@ -195,6 +196,10 @@ function TryOnContent() {
 
             const data = await res.json();
 
+            if (data.error) {
+                throw new Error(data.error || data.description || "AI Generation failed");
+            }
+
             if (data.image_url) {
                 setGeneratedImage(data.image_url);
 
@@ -204,8 +209,8 @@ function TryOnContent() {
                 // Auto-save to Supabase if authenticated
                 if (session?.user && currentMeasurementId) {
                     setIsSyncing(true);
-                    // Save generation (Measurement already saved in capture page)
-                    await saveGeneration({
+                    // Save generation
+                    const saveRes = await saveGeneration({
                         measurementId: currentMeasurementId,
                         imageUrl: data.image_url,
                         config: {
@@ -216,6 +221,10 @@ function TryOnContent() {
                             pocket: hasPocket
                         }
                     });
+
+                    if (saveRes.success) {
+                        console.log("Generation saved:", saveRes.generationId);
+                    }
                     setIsSyncing(false);
                 } else if (session?.user && frontImageId) {
                     // Fallback: Save measurements if they weren't saved for some reason
@@ -251,6 +260,8 @@ function TryOnContent() {
                     }
                     setIsSyncing(false);
                 }
+            } else {
+                throw new Error("No image URL returned from AI service");
             }
 
         } catch (error: any) {

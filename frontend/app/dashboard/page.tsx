@@ -142,8 +142,8 @@ export default async function DashboardPage() {
                                             <div className="relative aspect-[2/3] rounded-3xl overflow-hidden border border-white/10 group-hover:border-primary/40 transition-colors bg-white/5">
                                                 <DeleteGenerationButton generationId={gen.id} />
                                                 <img
-                                                    src={gen.imageUrl}
-                                                    alt="Bespoke Generation"
+                                                    src={`${gen.imageUrl}?v=${gen.id.slice(-6)}`}
+                                                    alt={`Bespoke Generation - ${(gen.config as any).style}`}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
