@@ -44,6 +44,9 @@ function CheckoutContent() {
     const router = useRouter();
     const { data: session } = useSession();
 
+    // Stepper State: 1: Verification, 2: Logistics, 3: Review
+    const [step, setStep] = useState(1);
+
     // Commission List (Cart)
     const [orders, setOrders] = useState<OrderItem[]>([]);
 
@@ -155,11 +158,6 @@ function CheckoutContent() {
         e.preventDefault();
         if (orders.length === 0 || isProcessing) return;
 
-        if (!shipping.address || !shipping.city || !shipping.phone) {
-            alert('Please complete all shipping details.');
-            return;
-        }
-
         setIsProcessing(true);
         try {
             const result = await createCheckoutSession({
@@ -192,283 +190,397 @@ function CheckoutContent() {
     };
 
     const totalCost = orders.reduce((acc, item) => acc + (499 * item.quantity), 0);
+    const totalItems = orders.reduce((acc, item) => acc + item.quantity, 0);
 
     return (
         <div className="min-h-screen bg-black text-white selection:bg-primary/30 font-sans relative overflow-x-hidden">
-            {/* Ambient Background */}
-            <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,_#1a1a1a_0%,_transparent_70%)] pointer-events-none" />
+            {/* Ambient Background Layer */}
+            <div className="fixed inset-0 bg-[#020202] pointer-events-none" />
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,_#1a1505_0%,_transparent_60%)] pointer-events-none opacity-40" />
+            <div className="fixed inset-0 pointer-events-none opacity-[0.02] mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")' }} />
 
-            <div className="relative z-10 w-full max-w-[1200px] mx-auto px-6 lg:px-12 pt-32 pb-20">
+            {/* Navigation / Progress Header */}
+            <nav className="fixed top-0 left-0 right-0 z-50 py-10 px-8 lg:px-16 flex justify-between items-center animate-fade-in">
+                <Link href="/" className="group flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center artisan-border">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_10px_#D4AF37]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40 group-hover:text-primary transition-colors">Thoub AI</span>
+                </Link>
 
-                {/* Refined Header Section */}
-                <header className="mb-12 animate-reveal flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="h-[1px] w-10 bg-primary/40" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/80">Artisan Verification</span>
+                <div className="flex items-center gap-12 bg-zinc-950/40 border border-white/5 backdrop-blur-3xl px-12 py-5 rounded-full shadow-2xl">
+                    {[
+                        { s: 1, l: "Verification" },
+                        { s: 2, l: "Logistics" },
+                        { s: 3, l: "Atelier" }
+                    ].map(stepNode => (
+                        <button
+                            key={stepNode.s}
+                            disabled={stepNode.s > step}
+                            onClick={() => setStep(stepNode.s)}
+                            className={`flex items-center gap-3 transition-all ${step === stepNode.s ? 'opacity-100 scale-105' : 'opacity-30 hover:opacity-100'}`}
+                        >
+                            <span className={`text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border ${step === stepNode.s ? 'bg-primary border-primary text-black' : 'border-white/20 text-white'}`}>
+                                {stepNode.s}
+                            </span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.3em]">{stepNode.l}</span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Artisan Session</span>
+                    <span className="text-[11px] font-mono text-primary/60">#5512-XPQ</span>
+                </div>
+            </nav>
+
+            <main className="relative z-10 w-full max-w-[1440px] mx-auto px-8 lg:px-16 pt-32 pb-40 grid grid-cols-1 lg:grid-cols-12 gap-16">
+
+                {/* Left Content Area: Dynamic based on Step */}
+                <div className="lg:col-span-8 flex flex-col gap-12 min-h-[600px]">
+
+                    {step === 1 && (
+                        <div className="animate-zoom-in space-y-12">
+                            <header className="space-y-4">
+                                <div className="flex items-center gap-4 text-primary">
+                                    <div className="h-px w-12 bg-primary/40" />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.6em]">Step 01 / Verification</span>
+                                </div>
+                                <h1 className="text-7xl font-black tracking-tighter uppercase italic leading-none gold-gradient-text">
+                                    The Artisan <br /> Queue
+                                </h1>
+                                <p className="text-white/40 text-sm tracking-[0.1em] uppercase max-w-xl font-bold">Review your bespoke configurations before handing over to the master tailors. Precision is the cornerstone of the Digital Atelier.</p>
+                            </header>
+
+                            <div className="space-y-6">
+                                {orders.map((item, idx) => (
+                                    <div
+                                        key={item.id}
+                                        className="group relative glass-luxury artisan-border rounded-[var(--radius-luxury)] p-10 flex flex-col md:flex-row gap-12 hover:border-primary/30 transition-all duration-700 animate-slide-up"
+                                        style={{ animationDelay: `${idx * 0.1}s` }}
+                                    >
+                                        <div className="w-full md:w-60 lg:w-72 aspect-[3/4] rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 relative artisan-border">
+                                            {item.imageUrl ? (
+                                                <img
+                                                    src={item.imageUrl}
+                                                    alt="Bespoke Thobe"
+                                                    className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-[2s] animate-breathing"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                                                    <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Syncing Blueprint...</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 flex flex-col justify-between py-2">
+                                            <div className="space-y-8">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="text-4xl font-black uppercase italic tracking-tighter text-white leading-none">{item.style.replace('_collar', '')}</h3>
+                                                        <div className="flex items-center gap-3 mt-3">
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/80">{item.fabric}</span>
+                                                            <div className="w-1 h-1 rounded-full bg-white/10" />
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{item.pattern}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-[10px] uppercase tracking-widest text-primary/30 font-black block mb-2 underline decoration-primary/20 underline-offset-8">Artisan Grade</span>
+                                                        <span className="text-3xl font-black italic gold-gradient-text">$499</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 group/metrics relative">
+                                                    {[
+                                                        { label: "Length", value: item.metrics.length },
+                                                        { label: "Chest", value: item.metrics.chest },
+                                                        { label: "Sleeve", value: item.metrics.sleeve },
+                                                        { label: "Shoulder", value: item.metrics.shoulder }
+                                                    ].map(metric => (
+                                                        <div key={metric.label} className="space-y-1">
+                                                            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">{metric.label}</span>
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-xl font-black italic text-white/70">{metric.value}</span>
+                                                                <span className="text-[9px] font-bold italic opacity-20 uppercase">cm</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between border-t border-white/5 pt-8 mt-auto">
+                                                <div className="flex items-center gap-8">
+                                                    <div className="flex items-center gap-6 bg-black/60 border border-white/10 rounded-2xl px-6 py-3">
+                                                        <button onClick={() => updateQuantity(item.id, -1)} className="text-white/20 hover:text-primary transition-colors font-black text-xl hover:scale-125 transition-transform">−</button>
+                                                        <span className="text-sm font-black italic min-w-[20px] text-center">{item.quantity}</span>
+                                                        <button onClick={() => updateQuantity(item.id, 1)} className="text-white/20 hover:text-primary transition-colors font-black text-xl hover:scale-125 transition-transform">+</button>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => removeItem(item.id)} className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-red-500/60 transition-colors py-2 group/remove">
+                                                    Discard <span className="hidden group-hover/remove:inline ml-2 opacity-40 transition-all">Configuration</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    onClick={handleOpenCatalogue}
+                                    className="w-full h-40 border border-dashed border-white/10 rounded-[var(--radius-luxury)] flex flex-col items-center justify-center gap-4 hover:bg-white/5 hover:border-primary/20 transition-all group animate-slide-up"
+                                    style={{ animationDelay: '0.4s' }}
+                                >
+                                    <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:scale-125 transition-transform duration-500">
+                                        <span className="text-primary text-2xl font-black">+</span>
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.5em] text-white/20 group-hover:text-primary/60 transition-colors">Integrate from History</span>
+                                </button>
+                            </div>
+
+                            <div className="flex justify-end pt-12">
+                                <button
+                                    onClick={() => setStep(2)}
+                                    className="px-16 h-20 bg-primary text-black rounded-[var(--radius-luxury)] text-xs font-black uppercase tracking-[0.4em] hover:scale-105 transition-all shadow-gold artisan-border"
+                                >
+                                    Advance to Logistics &rarr;
+                                </button>
+                            </div>
                         </div>
-                        <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase italic leading-none gold-gradient-text drop-shadow-xl">
-                            Bespoke <br /> Summary
-                        </h1>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Artisan Session ID</span>
-                        <span className="text-[11px] font-mono text-primary/40">#{Math.random().toString(36).substr(2, 8).toUpperCase()}</span>
-                    </div>
-                </header>
+                    )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                    {step === 2 && (
+                        <div className="animate-slide-in-right space-y-12 max-w-3xl">
+                            <header className="space-y-4">
+                                <div className="flex items-center gap-4 text-primary">
+                                    <div className="h-px w-12 bg-primary/40" />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.6em]">Step 02 / Logistics</span>
+                                </div>
+                                <h1 className="text-7xl font-black tracking-tighter uppercase italic leading-none gold-gradient-text">
+                                    Recipient <br /> Destination
+                                </h1>
+                                <p className="text-white/40 text-sm tracking-[0.1em] uppercase max-w-xl font-bold">Secure the global hub for your artisan garments. Every stitch follows your signature.</p>
+                            </header>
 
-                    {/* Visual Section: Sleeker & More Focused */}
-                    <div className="space-y-8 animate-reveal" style={{ animationDelay: '0.1s' }}>
-                        <div className="relative group">
-                            <div className="absolute -inset-10 bg-primary/5 rounded-full blur-[80px] opacity-30 group-hover:opacity-50 transition-opacity duration-700" />
-                            <div className="relative aspect-[4/5] w-full flex items-center justify-center p-8 bg-zinc-950/40 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-2xl shadow-2xl">
-                                {orders[0]?.imageUrl ? (
-                                    <div className="w-full h-full relative animate-breathing flex items-center justify-center">
-                                        <img
-                                            src={orders[0].imageUrl}
-                                            alt="Bespoke Thobe"
-                                            className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.03)]"
+                            <div className="glass-luxury artisan-border rounded-[var(--radius-luxury)] p-12 space-y-12">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-3 group">
+                                        <label className="text-[10px] uppercase tracking-[0.4em] text-primary/50 font-black ml-2 group-focus-within:text-primary transition-colors">Artisan Name</label>
+                                        <input
+                                            type="text"
+                                            value={shipping.name}
+                                            onChange={(e) => setShipping({ ...shipping, name: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-sm font-black focus:bg-white/10 focus:border-primary/40 transition-all outline-none"
+                                            placeholder="Mo Mussa"
                                         />
                                     </div>
-                                ) : (
-                                    <div className="text-center space-y-4">
-                                        <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto flex items-center justify-center">
-                                            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                                        </div>
-                                        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Syncing Artisan Blueprint...</p>
+                                    <div className="space-y-3 group">
+                                        <label className="text-[10px] uppercase tracking-[0.4em] text-primary/50 font-black ml-2 group-focus-within:text-primary transition-colors">Artisan Nexus (City)</label>
+                                        <input
+                                            type="text"
+                                            value={shipping.city}
+                                            onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-sm font-black focus:bg-white/10 focus:border-primary/40 transition-all outline-none"
+                                            placeholder="Riyadh"
+                                        />
                                     </div>
-                                )}
-
-                                <div className="absolute bottom-10 left-10 right-10 flex justify-between items-end">
-                                    <div className="space-y-1">
-                                        <p className="text-[8px] font-black uppercase tracking-[0.5em] text-primary/60">Verification Focus</p>
-                                        <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter leading-none">Artisan Prime</h3>
+                                    <div className="space-y-3 group md:col-span-2">
+                                        <label className="text-[10px] uppercase tracking-[0.4em] text-primary/50 font-black ml-2 group-focus-within:text-primary transition-colors">Global Destination Header</label>
+                                        <input
+                                            type="text"
+                                            value={shipping.address}
+                                            onChange={(e) => setShipping({ ...shipping, address: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-sm font-black focus:bg-white/10 focus:border-primary/40 transition-all outline-none"
+                                            placeholder="Street, District, Building"
+                                        />
                                     </div>
-                                    <div className="h-12 w-12 rounded-full border border-white/5 flex items-center justify-center backdrop-blur-2xl bg-white/5">
-                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_12px_#D4AF37]" />
+                                    <div className="space-y-3 group md:col-span-1">
+                                        <label className="text-[10px] uppercase tracking-[0.4em] text-primary/50 font-black ml-2 group-focus-within:text-primary transition-colors">Contact Protocol</label>
+                                        <input
+                                            type="tel"
+                                            value={shipping.phone}
+                                            onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-sm font-black focus:bg-white/10 focus:border-primary/40 transition-all outline-none"
+                                            placeholder="+966 ..."
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Order Management: Compact Cards */}
-                        <div className="space-y-4">
-                            {orders.map((item, idx) => (
-                                <div
-                                    key={item.id}
-                                    className="bg-zinc-950/50 border border-white/5 rounded-[2rem] p-8 flex flex-col md:flex-row gap-8 hover:border-primary/20 transition-all group animate-reveal"
-                                    style={{ animationDelay: `${0.2 + idx * 0.1}s` }}
+                            <div className="flex justify-between items-center pt-12">
+                                <button onClick={() => setStep(1)} className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 hover:text-white transition-colors">
+                                    &larr; Return to Verification
+                                </button>
+                                <button
+                                    onClick={() => setStep(3)}
+                                    disabled={!shipping.address || !shipping.city}
+                                    className="px-16 h-20 bg-primary text-black rounded-[var(--radius-luxury)] text-xs font-black uppercase tracking-[0.4em] hover:scale-105 transition-all shadow-gold disabled:opacity-30 disabled:grayscale"
                                 >
-                                    <div className="flex-1 space-y-6">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="text-3xl font-black uppercase italic tracking-tighter text-white">{item.style.replace('_collar', '')}</h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-[9px] text-primary/60 tracking-widest uppercase font-black">{item.fabric}</span>
-                                                    <div className="w-1 h-1 rounded-full bg-white/10" />
-                                                    <span className="text-[9px] text-white/30 tracking-widest uppercase font-bold">{item.pattern}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-primary/40 block mb-1">Commission</span>
-                                                <span className="text-xl font-black italic text-white">$499</span>
-                                            </div>
-                                        </div>
+                                    Review Commission &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            {[
-                                                { l: "Chest", v: item.metrics.chest },
-                                                { l: "Length", v: item.metrics.length },
-                                                { l: "Sleeve", v: item.metrics.sleeve },
-                                                { l: "Shoulder", v: item.metrics.shoulder },
-                                            ].map(m => (
-                                                <div key={m.l}>
-                                                    <span className="text-[8px] uppercase tracking-widest text-white/20 font-black block mb-1">{m.l}</span>
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-base font-black italic text-white/80">{m.v}</span>
-                                                        <span className="text-[8px] opacity-20 font-bold uppercase italic">cm</span>
-                                                    </div>
+                    {step === 3 && (
+                        <div className="animate-fade-in space-y-12">
+                            <header className="space-y-4">
+                                <div className="flex items-center gap-4 text-primary">
+                                    <div className="h-px w-12 bg-primary/40" />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.6em]">Step 03 / Final Atelier</span>
+                                </div>
+                                <h1 className="text-7xl font-black tracking-tighter uppercase italic leading-none gold-gradient-text">
+                                    Handover <br /> Protocol
+                                </h1>
+                                <p className="text-white/40 text-sm tracking-[0.1em] uppercase max-w-xl font-bold">The ledger is ready. By commissioning, you activate our digital looms to begin crafting your bespoke legacy.</p>
+                            </header>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="glass-luxury artisan-border rounded-[var(--radius-luxury)] p-12 space-y-10">
+                                    <div className="space-y-6">
+                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">Artisan Summary</h3>
+                                        <div className="space-y-4">
+                                            {orders.map(o => (
+                                                <div key={o.id} className="flex justify-between items-center border-b border-white/5 pb-4">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{o.quantity}X {o.style}</span>
+                                                    <span className="text-sm font-black italic">${o.quantity * 499}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-
-                                    <div className="w-full md:w-px bg-white/5" />
-
-                                    <div className="flex flex-row md:flex-col justify-between items-center gap-6">
-                                        <div className="space-y-2 text-center">
-                                            <span className="text-[8px] uppercase tracking-widest text-primary/50 font-black block">Qty</span>
-                                            <div className="flex items-center gap-4 bg-black/40 border border-white/5 rounded-xl p-2 px-4 transition-transform group-hover:scale-105">
-                                                <button onClick={() => updateQuantity(item.id, -1)} className="text-white/30 hover:text-primary transition-colors font-black text-xl">−</button>
-                                                <span className="text-sm font-black italic min-w-[18px]">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.id, 1)} className="text-white/30 hover:text-primary transition-colors font-black text-xl">+</button>
-                                            </div>
+                                    <div className="pt-6 border-t border-white/10 flex justify-between items-end">
+                                        <div>
+                                            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/60 block mb-2">Commission Total</span>
+                                            <span className="text-5xl font-black italic gold-gradient-text">${totalCost}</span>
                                         </div>
-                                        <button onClick={() => removeItem(item.id)} className="text-[8px] uppercase tracking-widest text-white/20 hover:text-red-500/60 font-black transition-colors">Discard</button>
                                     </div>
                                 </div>
-                            ))}
 
-                            <button
-                                onClick={handleOpenCatalogue}
-                                className="w-full py-8 border border-dashed border-white/5 rounded-[2rem] flex items-center justify-center gap-4 hover:border-primary/20 hover:bg-white/5 transition-all group animate-reveal"
-                                style={{ animationDelay: '0.4s' }}
-                            >
-                                <div className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform bg-white/5">
-                                    <span className="text-primary font-black text-lg">+</span>
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 group-hover:text-primary/40 transition-colors">Add to Order</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Shipping & Finalization: Tight & Elegant */}
-                    <div className="animate-reveal" style={{ animationDelay: '0.3s' }}>
-                        <div className="sticky top-32">
-                            <div className="bg-zinc-950/60 border border-white/10 rounded-[2.5rem] p-10 md:p-12 shadow-3xl backdrop-blur-3xl space-y-10">
-                                <div className="text-center space-y-2">
-                                    <h2 className="text-3xl font-black uppercase tracking-tighter italic gold-gradient-text">Delivery Nexus</h2>
-                                    <p className="text-[9px] uppercase tracking-[0.5em] text-white/20 font-black">Global Artisan Logistics</p>
-                                </div>
-
-                                <form onSubmit={handleCommission} className="space-y-6">
+                                <div className="glass-luxury artisan-border rounded-[var(--radius-luxury)] p-12 space-y-10">
                                     <div className="space-y-6">
-                                        <div className="space-y-2 group">
-                                            <label className="text-[9px] uppercase tracking-widest text-primary/50 font-black ml-4 group-focus-within:text-primary transition-colors">Recipient Identity</label>
-                                            <input
-                                                type="text"
-                                                value={shipping.name}
-                                                onChange={(e) => setShipping({ ...shipping, name: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white/10 focus:border-primary/20 transition-all outline-none placeholder:text-white/10"
-                                                placeholder="Artisan Signature"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2 group">
-                                            <label className="text-[9px] uppercase tracking-widest text-primary/50 font-black ml-4 group-focus-within:text-primary transition-colors">Final Destination</label>
-                                            <input
-                                                type="text"
-                                                value={shipping.address}
-                                                onChange={(e) => setShipping({ ...shipping, address: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white/10 focus:border-primary/20 transition-all outline-none placeholder:text-white/10"
-                                                placeholder="Street, Suite, District"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <div className="space-y-2 group">
-                                                <label className="text-[9px] uppercase tracking-widest text-primary/50 font-black ml-4 group-focus-within:text-primary transition-colors">City Hub</label>
-                                                <input
-                                                    type="text"
-                                                    value={shipping.city}
-                                                    onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white/10 focus:border-primary/20 transition-all outline-none placeholder:text-white/10"
-                                                    placeholder="Riyadh"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2 group">
-                                                <label className="text-[9px] uppercase tracking-widest text-primary/50 font-black ml-4 group-focus-within:text-primary transition-colors">Contact Nexus</label>
-                                                <input
-                                                    type="tel"
-                                                    value={shipping.phone}
-                                                    onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white/10 focus:border-primary/20 transition-all outline-none placeholder:text-white/10"
-                                                    placeholder="+966..."
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-10 border-t border-white/5 space-y-10">
-                                        <div className="flex justify-between items-end">
+                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">Destination Proof</h3>
+                                        <div className="space-y-6">
                                             <div>
-                                                <span className="text-[9px] uppercase font-black tracking-[0.4em] text-white/20 block mb-1">Final Total</span>
-                                                <div className="flex items-baseline gap-2">
-                                                    <span className="text-4xl font-black italic gold-gradient-text">${totalCost}</span>
-                                                    <span className="text-[10px] text-white/20 uppercase font-black">USD</span>
-                                                </div>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-white/20 block mb-1">Recipient ID</span>
+                                                <p className="text-sm font-black uppercase tracking-widest text-white/80">{shipping.name}</p>
                                             </div>
-                                            <div className="text-right">
-                                                <span className="text-[8px] text-white/10 uppercase font-black block mb-1">Status</span>
-                                                <span className="text-[9px] text-primary/40 uppercase font-black tracking-widest">Awaiting Commission</span>
+                                            <div>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-white/20 block mb-1">Logistics Hub</span>
+                                                <p className="text-sm font-black uppercase tracking-widest text-white/80">{shipping.address}, {shipping.city}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-white/20 block mb-1">Contact Protocol</span>
+                                                <p className="text-sm font-black uppercase tracking-widest text-white/80">{shipping.phone}</p>
                                             </div>
                                         </div>
-
-                                        <button
-                                            type="submit"
-                                            disabled={isProcessing || orders.length === 0}
-                                            className="w-full h-20 bg-primary text-black rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(212,175,55,0.25)] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:grayscale relative overflow-hidden group/btn"
-                                        >
-                                            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-[1s] ease-in-out" />
-                                            {isProcessing ? (
-                                                <div className="w-6 h-6 border-3 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
-                                            ) : (
-                                                <span className="relative z-10">Finalize Commission</span>
-                                            )}
-                                        </button>
-
-                                        <p className="text-[8px] text-center text-white/10 uppercase tracking-[0.3em] font-black leading-relaxed">
-                                            BY PROCEEDING, YOU AUTHORIZE THE ATELIER TO BEGIN TAILORING ON THESE SPECIFICATIONS. NO MODIFICATIONS POSSIBLE POST-COMMISSION.
-                                        </p>
                                     </div>
-                                </form>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-12">
+                                <button onClick={() => setStep(2)} className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 hover:text-white transition-colors">
+                                    &larr; Refine Logistics
+                                </button>
+                                <button
+                                    onClick={handleCommission}
+                                    disabled={isProcessing}
+                                    className="px-24 h-24 bg-primary text-black rounded-[var(--radius-luxury)] text-sm font-black uppercase tracking-[0.6em] hover:scale-105 transition-all shadow-gold shadow-[0_20px_60px_-10px_rgba(212,175,55,0.4)] disabled:opacity-50"
+                                >
+                                    {isProcessing ? "Processing Handover..." : "Handover to Atelier"}
+                                </button>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
-            </div>
+
+                {/* Right Content Area: Persistent Artisan Ledger */}
+                <div className="lg:col-span-4 lg:pl-12 border-l border-white/5 lg:sticky lg:top-40 h-fit space-y-12 animate-slide-in-right">
+                    <section className="space-y-10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_10px_#D4AF37]" />
+                            <h2 className="text-xl font-black uppercase italic tracking-tighter text-white">Artisan Ledger</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Queue Items</span>
+                                <span className="text-sm font-black italic">{totalItems} Thobes</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Atelier Access</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500/60 transition-all font-mono">Unlimited Verified</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Commission Rate</span>
+                                <span className="text-sm font-black italic">$499.00 / ea</span>
+                            </div>
+                            <div className="h-px w-full bg-white/5" />
+                            <div className="flex justify-between items-end pt-4">
+                                <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary/60 italic">Collective Total</span>
+                                <span className="text-5xl font-black italic gold-gradient-text tracking-tighter">${totalCost}</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="glass-luxury artisan-border rounded-3xl p-8 space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                                <svg className="w-5 h-5 text-primary opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                            </div>
+                            <div>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em]">Artisan Guarantee</h4>
+                                <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-1">Global Precision Verified</p>
+                            </div>
+                        </div>
+                        <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest leading-relaxed">Each thobe is hand-verified for metric accuracy before shipping. Our digital-first model ensures bespoke perfection at an exclusive scale.</p>
+                    </section>
+                </div>
+            </main>
 
             {/* Catalogue Selection Modal */}
             {isCatalogueOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl animate-fade-in" onClick={() => setIsCatalogueOpen(false)} />
-                    <div className="relative w-full max-w-5xl bg-zinc-950 border border-white/10 rounded-[3rem] shadow-4xl overflow-hidden animate-zoom-in flex flex-col max-h-[90vh]">
-                        <header className="p-10 border-b border-white/5 flex justify-between items-center">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 lg:p-20 overflow-hidden">
+                    <div className="absolute inset-0 bg-black/95 backdrop-blur-[40px] animate-fade-in" onClick={() => setIsCatalogueOpen(false)} />
+                    <div className="relative w-full max-w-[1200px] bg-zinc-950 border border-white/10 rounded-[var(--radius-artisan)] shadow-4xl overflow-hidden animate-zoom-in flex flex-col max-h-[85vh] artisan-border">
+                        <header className="p-12 border-b border-white/5 flex justify-between items-center bg-black/40">
                             <div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-2 block">Catalogue Selection</span>
-                                <h2 className="text-4xl font-black uppercase italic tracking-tighter gold-gradient-text">Add from History</h2>
+                                <span className="text-[11px] font-black uppercase tracking-[0.6em] text-primary mb-3 block">Digital Archive</span>
+                                <h2 className="text-5xl font-black uppercase italic tracking-tighter gold-gradient-text leading-none">Your Bespoke Selection</h2>
                             </div>
-                            <button onClick={() => setIsCatalogueOpen(false)} className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors">
-                                <span className="text-2xl font-black">×</span>
+                            <button onClick={() => setIsCatalogueOpen(false)} className="h-16 w-16 rounded-full border border-white/10 flex items-center justify-center text-white/20 hover:text-white transition-all hover:rotate-90">
+                                <span className="text-4xl font-black">×</span>
                             </button>
                         </header>
 
-                        <div className="flex-1 overflow-y-auto p-10">
+                        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
                             {isLoadingCatalogue ? (
-                                <div className="h-64 flex flex-col items-center justify-center space-y-6">
-                                    <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Synchronizing Artisan Catalogue...</p>
+                                <div className="h-[400px] flex flex-col items-center justify-center space-y-8">
+                                    <div className="w-16 h-16 border-2 border-primary/10 border-t-primary rounded-full animate-spin flex items-center justify-center">
+                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                    </div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/20">Decrypting Catalogue Blueprint...</p>
                                 </div>
                             ) : catalogue.length === 0 ? (
-                                <div className="h-64 flex flex-col items-center justify-center space-y-6">
-                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest">No previous configurations found.</p>
-                                    <Link href="/capture" className="px-8 py-4 bg-primary text-black rounded-xl text-[10px] font-black uppercase tracking-widest">Begin Tailoring</Link>
+                                <div className="h-[400px] flex flex-col items-center justify-center space-y-8">
+                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest text-center">Your artisan history is currently empty.</p>
+                                    <Link href="/capture" className="px-12 py-5 bg-primary text-black rounded-2xl text-[10px] font-black uppercase tracking-widest">Begin Tailoring</Link>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                                     {catalogue.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="group bg-white/5 border border-white/5 rounded-[2.5rem] p-6 hover:border-primary/40 transition-all cursor-pointer relative"
+                                            className="group bg-white/2 rounded-[var(--radius-luxury)] p-6 hover:border-primary/40 glass-luxury artisan-border border border-white/5 transition-all cursor-pointer relative"
                                             onClick={() => addToOrderFromCatalogue(item)}
                                         >
-                                            <div className="aspect-[4/5] w-full rounded-[1.5rem] overflow-hidden bg-black/40 border border-white/5 mb-6 relative">
-                                                <img src={item.imageUrl} alt="Catalogue Item" className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-700" />
-                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] bg-primary text-black px-6 py-3 rounded-full">Add to Order</span>
+                                            <div className="aspect-[3/4] w-full rounded-[1.5rem] overflow-hidden bg-black/40 border border-white/5 mb-6 relative">
+                                                <img src={item.imageUrl} alt="Catalogue Item" className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-[2s]" />
+                                                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                    <span className="text-[11px] font-black uppercase tracking-[0.4em] bg-primary text-black px-10 py-5 rounded-full shadow-gold">Integrate Thobe</span>
                                                 </div>
                                             </div>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 className="text-lg font-black uppercase italic tracking-tighter text-white">{item.config.style.replace('_collar', '')}</h4>
-                                                        <p className="text-[9px] text-primary/60 font-black uppercase tracking-widest">{item.config.fabric}</p>
-                                                    </div>
-                                                </div>
+                                            <div className="space-y-3">
+                                                <h4 className="text-xl font-black uppercase italic tracking-tighter text-white">{item.config.style.replace('_collar', '')}</h4>
+                                                <p className="text-[10px] text-primary/60 font-black uppercase tracking-widest">{item.config.fabric}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -478,9 +590,6 @@ function CheckoutContent() {
                     </div>
                 </div>
             )}
-
-            {/* Minimal Grid Accent */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(#ffffff 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
         </div>
     );
 }
@@ -488,13 +597,13 @@ function CheckoutContent() {
 export default function CheckoutPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-6">
-                <div className="w-16 h-16 border-2 border-primary/10 border-t-primary rounded-full animate-spin flex items-center justify-center">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <div className="min-h-screen bg-[#020202] flex flex-col items-center justify-center space-y-10 animate-fade-in">
+                <div className="w-24 h-24 border-2 border-primary/10 border-t-primary rounded-full animate-spin flex items-center justify-center artisan-border">
+                    <div className="w-4 h-4 bg-primary rounded-full animate-pulse shadow-[0_0_20px_#D4AF37]" />
                 </div>
-                <div className="space-y-2 text-center text-primary/60">
-                    <span className="text-[10px] font-black uppercase tracking-[0.6em] block">Artisan Vault</span>
-                    <span className="text-[8px] font-bold uppercase tracking-[0.4em] text-white/10">Synchronizing...</span>
+                <div className="space-y-3 text-center">
+                    <span className="text-[14px] font-black uppercase tracking-[1em] block text-primary/60 gold-gradient-text">Artisan Vault</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/10">Synchronizing Session Protocol...</span>
                 </div>
             </div>
         }>

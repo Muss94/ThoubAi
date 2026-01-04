@@ -20,6 +20,12 @@
   --color-surface: hsl(var(--surface));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --radius-luxury: 2.5rem;
+  --radius-artisan: 3rem;
+
+  --shadow-gold: 0 10px 40px -10px rgba(212, 175, 55, 0.2);
+  --shadow-deep: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes scan {
@@ -161,17 +167,19 @@
 @keyframes fade-in {
   from {
     opacity: 0;
+    filter: blur(10px);
   }
 
   to {
     opacity: 1;
+    filter: blur(0);
   }
 }
 
 @keyframes zoom-in {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(10px);
+    transform: scale(0.95) translateY(20px);
   }
 
   to {
@@ -180,16 +188,73 @@
   }
 }
 
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-in {
-  animation: fade-in 0.4s ease-out forwards;
+  animation: fade-in 0.6s ease-out forwards;
 }
 
 .animate-zoom-in {
-  animation: zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: zoom-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-gold-glow {
   animation: pulse-gold 3s ease-in-out infinite;
+}
+
+.glass-luxury {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-deep);
+}
+
+.artisan-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.artisan-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  background: linear-gradient(45deg, rgba(212, 175, 55, 0.1), transparent, rgba(212, 175, 55, 0.1)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .glass {
