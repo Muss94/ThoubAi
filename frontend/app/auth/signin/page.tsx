@@ -27,8 +27,8 @@ export default function SignInPage() {
             if (res?.error) {
                 setError("Invalid email or password.");
             } else {
-                // Successful login
-                router.push("/dashboard");
+                // Successful login - Force hard navigation to ensure session is picked up
+                window.location.href = "/dashboard";
             }
         } catch (err) {
             setError("An unexpected error occurred.");

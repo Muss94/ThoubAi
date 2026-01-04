@@ -87,8 +87,9 @@ export async function requestPasswordReset(email: string) {
 
         return { success: true };
     } catch (error) {
-        console.error("Password reset request error:", error);
-        return { success: false, error: "Failed to send reset email" };
+        console.error("Password reset request error details:", JSON.stringify(error, null, 2));
+        // Return true anyway for security, but log the failure
+        return { success: true };
     }
 }
 
