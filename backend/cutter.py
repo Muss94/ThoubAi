@@ -1,18 +1,24 @@
-import mediapipe as mp
 import cv2
 import numpy as np
 import math
 
 class Cutter:
     def __init__(self):
-        self.mp_pose = mp.solutions.pose
         self._pose = None
 
     @property
     def pose(self):
         if self._pose is None:
             print("INFO: Loading MediaPipe Pose model...")
-            self._pose = self.mp_pose.Pose(
+            import mediapipe as mp
+            # Use specific import path if available, or try standard
+            try:
+                import mediapipe.solutions.pose as mp_pose
+            except ImportError:
+                print("Warning: Falling back to mp.solutions.pose")
+                mp_pose = mp.solutions.pose
+            
+            self._pose = mp_pose.Pose(
                 static_image_mode=True,
                 model_complexity=2,
                 enable_segmentation=True,

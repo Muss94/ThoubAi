@@ -3,8 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
-from cutter import Cutter
-from virtual_mirror import NeuralMirror
+# from cutter import Cutter (Moved to lazy loader)
+# from virtual_mirror import NeuralMirror (Moved to lazy loader)
 import traceback
 import os
 import shutil
@@ -95,16 +95,28 @@ async def startup_event():
     # Start heartbeat
     asyncio.create_task(heartbeat())
 
+_cutter_service = None
+_mirror_service = None
+
+def get_cutter_service():
+    global _cutter_service
+    if _cutter_service is None:
+        from cutter import Cutter
+        _cutter_service = Cutter()
+    return _cutter_service
+
+def get_mirror_service():
+    global _mirror_service
+    if _mirror_service is None:
+        from virtual_mirror import NeuralMirror
+        _mirror_service = NeuralMirror()
+    return _mirror_service
+
 @app.get("/")
 def read_root():
     return {
         "message": "Thoub-AI Backend Operational",
-        "status": "online",
-        "services_initialized": {
-            "cutter": cutter_service is not None,
-            "mirror": mirror_service is not None,
-            "supabase": supabase is not None
-        }
+        "status": "online"
     }
 
 @app.get("/ping")
@@ -164,10 +176,11 @@ async def measure_body(
         with open(front_path, "rb") as f:
             front_content = f.read()
             
-        if not cutter_service:
+        cutter = get_cutter_service()
+        if not cutter:
             raise HTTPException(status_code=503, detail="Cutter service is not available (MediaPipe initialization failed)")
             
-        result = cutter_service.process(front_content, height_cm, fit_type)
+        result = cutter.process(front_content, height_cm, fit_type)
         
         # Add image_ids to result for frontend to pass back
         result["image_ids"] = {
@@ -213,10 +226,11 @@ async def try_on(
         # Note: image_path needs to be absolute for some SDKs, or relative is fine.
         # virtual_mirror.py uses it directly.
         
-        if not mirror_service:
+        mirror = get_mirror_service()
+        if not mirror:
              return JSONResponse(status_code=503, content={"error": "Neural Mirror service is not available (Gemini initialization failed)"})
 
-        result = mirror_service.generate_try_on(
+        result = mirror.generate_try_on(
             image_path, 
             texture_id, 
             pattern_id, 
