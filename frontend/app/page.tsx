@@ -121,21 +121,21 @@ function TestimonialsSection() {
   const testimonials = [
     {
       quote: "Thoub AI has completely transformed my perception of traditional wear. The precision is unmatched.",
-      name: "Omar Al-Fayed",
+      name: "Omar Ibrahim",
       title: "Riyadh, KSA",
       company: "Verified Client",
       image: "/images/testimonials/t5.jpg"
     },
     {
       quote: "I ordered this for my son and the fit was perfect straight out of the box. Amazing technology.",
-      name: "Amir Al-Maktoum",
+      name: "Yousef Al-Sheikh",
       title: "Dubai, UAE",
       company: "Verified Client",
       image: "/images/testimonials/t3.jpg"
     },
     {
-      quote: "The Neural Mirror fit is impeccable—better than any tailor I've visited in person. Truly the future of bespoke.",
-      name: "James Sterling",
+      quote: "The Thoub AI fit is impeccable—better than any tailor I've visited in person. Truly the future of bespoke.",
+      name: "Kaz  Jones",
       title: "London, UK",
       company: "Verified Client",
       image: "/images/testimonials/t4.jpg"

@@ -1,37 +1,54 @@
 'use client';
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { registerUser } from "@/app/actions/auth";
 
-export default function SignInPage() {
+export default function SignUpPage() {
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError("");
 
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(false);
+            return;
+        }
+
         try {
-            const res = await signIn("credentials", {
+            const result = await registerUser({ name, email, password });
+
+            if (!result.success) {
+                setError(result.error || "Registration failed");
+                setLoading(false);
+                return;
+            }
+
+            // Auto sign in after registration
+            const signInResult = await signIn("credentials", {
                 email,
                 password,
                 redirect: false,
             });
 
-            if (res?.error) {
-                setError("Invalid email or password.");
+            if (signInResult?.error) {
+                setError("Account created! Please sign in.");
+                window.location.href = "/auth/signin";
             } else {
-                // Successful login
-                router.push("/dashboard");
+                window.location.href = "/dashboard";
             }
         } catch (err) {
-            setError("An unexpected error occurred.");
+            setError("An unexpected error occurred");
         } finally {
             setLoading(false);
         }
@@ -47,14 +64,26 @@ export default function SignInPage() {
                         </div>
                         <h1 className="text-2xl font-black tracking-[0.4em] text-white uppercase italic">Thoub AI</h1>
                     </Link>
-                    <h2 className="text-4xl font-black gold-gradient-text tracking-tighter uppercase mb-2">Artisan Login</h2>
-                    <p className="text-white/40 text-xs tracking-widest uppercase">Enter the Digital Atelier</p>
+                    <h2 className="text-4xl font-black gold-gradient-text tracking-tighter uppercase mb-2">Create Account</h2>
+                    <p className="text-white/40 text-xs tracking-widest uppercase">Join the Digital Atelier</p>
                 </div>
 
                 <div className="bg-surface/50 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent blur-sm" />
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-black ml-1">Full Name</label>
+                            <input
+                                required
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="Your name"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-primary/50 text-white placeholder:text-white/10 transition-all"
+                            />
+                        </div>
+
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-black ml-1">Email</label>
                             <input
@@ -68,17 +97,25 @@ export default function SignInPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-black ml-1">Password</label>
-                                <Link href="/auth/forgot-password" className="text-[9px] uppercase tracking-widest text-white/40 hover:text-white">
-                                    Forgot?
-                                </Link>
-                            </div>
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-black ml-1">Password</label>
                             <input
                                 required
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Min. 8 characters"
+                                minLength={8}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-primary/50 text-white placeholder:text-white/10 transition-all"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-black ml-1">Confirm Password</label>
+                            <input
+                                required
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-primary/50 text-white placeholder:text-white/10 transition-all"
                             />
@@ -95,15 +132,15 @@ export default function SignInPage() {
                             disabled={loading}
                             className="w-full py-5 rounded-2xl bg-primary text-black text-xs font-black uppercase tracking-[0.4em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(212,175,55,0.2)] disabled:opacity-50 disabled:grayscale"
                         >
-                            {loading ? "Verifying..." : "Auth Login"}
+                            {loading ? "Creating Account..." : "Create Account"}
                         </button>
                     </form>
 
                     <div className="mt-8 pt-6 border-t border-white/5 text-center">
                         <p className="text-[11px] text-white/40">
-                            New artisan?{" "}
-                            <Link href="/auth/signup" className="text-primary font-bold hover:underline">
-                                Create Account
+                            Already have an account?{" "}
+                            <Link href="/auth/signin" className="text-primary font-bold hover:underline">
+                                Sign In
                             </Link>
                         </p>
                     </div>
