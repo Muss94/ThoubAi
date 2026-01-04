@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint"
   },
@@ -19,10 +20,10 @@
     "react-dom": "^19.2.3",
     "react-webcam": "^7.2.0",
     "resend": "^6.6.0",
-    "stripe": "^20.1.0"
+    "stripe": "^20.1.0",
+    "@prisma/client": "^6.19.1"
   },
   "devDependencies": {
-    "@prisma/client": "^6.19.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
