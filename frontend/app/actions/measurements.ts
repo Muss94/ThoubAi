@@ -89,50 +89,26 @@ export async function saveGeneration(data: {
 
         if (!user) return { success: false, error: "User not found" };
 
-        // Check for existing generation with same config to prevent duplicates
-        const existingGeneration = await prisma.generation.findFirst({
-            where: {
+        // New Configuration: Check credits
+        if (user.generationCredits <= 0) {
+            return { success: false, error: "INSUFFICIENT_CREDITS", type: "generation" };
+        }
+
+        // Create new entry
+        const generation = await prisma.generation.create({
+            data: {
                 userId: session.user.id,
-                config: {
-                    equals: data.config as any
-                }
-            }
+                measurementId: data.measurementId,
+                imageUrl: data.imageUrl,
+                config: data.config,
+            },
         });
 
-        let generation;
-
-        if (existingGeneration) {
-            // Update existing entry (Doesn't cost credits if they are just re-generating/updating same config)
-            generation = await prisma.generation.update({
-                where: { id: existingGeneration.id },
-                data: {
-                    imageUrl: data.imageUrl,
-                    measurementId: data.measurementId,
-                    createdAt: new Date()
-                }
-            });
-        } else {
-            // New Configuration: Check credits
-            if (user.generationCredits <= 0) {
-                return { success: false, error: "INSUFFICIENT_CREDITS", type: "generation" };
-            }
-
-            // Create new entry
-            generation = await prisma.generation.create({
-                data: {
-                    userId: session.user.id,
-                    measurementId: data.measurementId,
-                    imageUrl: data.imageUrl,
-                    config: data.config,
-                },
-            });
-
-            // Decrement generation credit
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { generationCredits: { decrement: 1 } }
-            });
-        }
+        // Decrement generation credit
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { generationCredits: { decrement: 1 } }
+        });
 
         return { success: true, generationId: generation.id };
     } catch (error) {
