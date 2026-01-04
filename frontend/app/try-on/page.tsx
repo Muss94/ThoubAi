@@ -66,6 +66,12 @@ function TryOnContent() {
                     }
                 }
                 setLoading(false);
+            } else {
+                // Not a re-visit, check for passed measurement_id from capture
+                const passedId = searchParams.get('measurement_id');
+                if (passedId) {
+                    setCurrentMeasurementId(passedId);
+                }
             }
         }
 
@@ -175,11 +181,26 @@ function TryOnContent() {
                 await deductGenerationCredit();
 
                 // Auto-save to Supabase if authenticated
-                if (session?.user && frontImageId) {
+                if (session?.user && currentMeasurementId) {
                     setIsSyncing(true);
-
+                    // Save generation (Measurement already saved in capture page)
+                    await saveGeneration({
+                        measurementId: currentMeasurementId,
+                        imageUrl: data.image_url,
+                        config: {
+                            fabric: selectedFabric,
+                            pattern: selectedPattern,
+                            style: selectedStyle,
+                            closure: closureType,
+                            pocket: hasPocket
+                        }
+                    });
+                    setIsSyncing(false);
+                } else if (session?.user && frontImageId) {
+                    // Fallback: Save measurements if they weren't saved for some reason
+                    setIsSyncing(true);
                     const measResult = await saveUserMeasurements({
-                        userId: session.user.email!, // Email used as makeshift ID or look up user
+                        userId: session.user.id || "",
                         userEmail: session.user.email!,
                         heightCm,
                         frontImageId,
@@ -195,7 +216,6 @@ function TryOnContent() {
 
                     if (measResult.success && measResult.measurementId) {
                         setCurrentMeasurementId(measResult.measurementId);
-                        // Save generation
                         await saveGeneration({
                             measurementId: measResult.measurementId,
                             imageUrl: data.image_url,

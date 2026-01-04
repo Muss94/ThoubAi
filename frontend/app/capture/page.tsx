@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { checkMeasurementCredits, deductMeasurementCredit } from '@/app/actions/credits';
+import { saveUserMeasurements, updateUserProfileImage } from '@/app/actions/measurements';
 import TopUpModal from '@/components/TopUpModal';
 
 // Instruction Modal Component
@@ -148,6 +149,34 @@ export default function CapturePage() {
             const data = await res.json();
             console.log("Measurement success:", data);
 
+            // 1. SAVE TO DATABASE IMMEDIATELY
+            let savedMeasurementId = "";
+            if (session?.user?.email) {
+                const saveResult = await saveUserMeasurements({
+                    userId: session.user.id || "",
+                    userEmail: session.user.email,
+                    heightCm: heightCm,
+                    frontImageId: data.image_ids.front,
+                    sideImageId: data.image_ids.side || undefined,
+                    profileImageId: data.image_ids.profile,
+                    measurements: {
+                        thobeLength: data.measurements.thobe_length,
+                        chest: data.measurements.chest_circumference,
+                        sleeve: data.measurements.sleeve_length,
+                        shoulder: data.measurements.shoulder_width,
+                    }
+                });
+
+                if (saveResult.success && saveResult.measurementId) {
+                    savedMeasurementId = saveResult.measurementId;
+                }
+
+                // 2. SYNC PROFILE IMAGE TO ACCOUNT
+                if (data.image_ids.profile) {
+                    await updateUserProfileImage(data.image_ids.profile);
+                }
+            }
+
             // Deduct measurement credit after successful measurement
             const deductResult = await deductMeasurementCredit();
             if (deductResult.success) {
@@ -160,9 +189,11 @@ export default function CapturePage() {
                 chest: data.measurements.chest_circumference.toString(),
                 sleeve: data.measurements.sleeve_length.toString(),
                 shoulder: data.measurements.shoulder_width.toString(),
+                height_cm: heightCm.toString(),
                 front_image_id: data.image_ids.front,
                 side_image_id: data.image_ids.side || "",
-                profile_image_id: data.image_ids.profile
+                profile_image_id: data.image_ids.profile,
+                measurement_id: savedMeasurementId // Pass the DB anchor
             }).toString();
 
             router.push(`/try-on?${query}`);

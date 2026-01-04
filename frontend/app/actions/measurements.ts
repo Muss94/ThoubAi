@@ -195,6 +195,26 @@ export async function updateMeasurementProfileImage(measurementId: string, profi
     }
 }
 
+export async function updateUserProfileImage(filename: string) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { image: filename }, // Sync to account profile image
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Prisma User Update Error:", error);
+        return { success: false, error: "Failed to update account profile" };
+    }
+}
+
 export async function deleteGeneration(generationId: string) {
     const session = await auth();
 
