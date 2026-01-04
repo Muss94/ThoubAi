@@ -60,8 +60,17 @@ supabase: Optional[Client] = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-cutter_service = Cutter()
-mirror_service = NeuralMirror()
+try:
+    cutter_service = Cutter()
+except Exception as e:
+    print(f"FAILED TO INITIALIZE CUTTER: {e}")
+    cutter_service = None
+
+try:
+    mirror_service = NeuralMirror()
+except Exception as e:
+    print(f"FAILED TO INITIALIZE MIRROR: {e}")
+    mirror_service = None
 
 @app.get("/")
 def read_root():
@@ -120,6 +129,9 @@ async def measure_body(
         with open(front_path, "rb") as f:
             front_content = f.read()
             
+        if not cutter_service:
+            raise HTTPException(status_code=503, detail="Cutter service is not available (MediaPipe initialization failed)")
+            
         result = cutter_service.process(front_content, height_cm, fit_type)
         
         # Add image_ids to result for frontend to pass back
@@ -166,6 +178,9 @@ async def try_on(
         # Note: image_path needs to be absolute for some SDKs, or relative is fine.
         # virtual_mirror.py uses it directly.
         
+        if not mirror_service:
+             return JSONResponse(status_code=503, content={"error": "Neural Mirror service is not available (Gemini initialization failed)"})
+
         result = mirror_service.generate_try_on(
             image_path, 
             texture_id, 
