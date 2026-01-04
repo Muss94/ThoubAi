@@ -66,6 +66,7 @@ model Measurement {
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders       Order[]
+  orderItems   OrderItem[]
   generations  Generation[]
 }
 
@@ -81,8 +82,8 @@ enum OrderStatus {
 model Order {
   id               String      @id @default(cuid())
   userId           String
-  measurementId    String
-  config           Json        // Stores fabric, collar, closure, etc.
+  measurementId    String?     // Optional for multi-item orders
+  config           Json        // Stores fabric, collar, closure, etc. (or items array)
   shippingDetails  Json?       // Stores name, address, city, phone, etc.
   status           OrderStatus @default(PENDING)
   total            Int         // In cents
@@ -91,6 +92,19 @@ model Order {
   updatedAt        DateTime    @updatedAt
 
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  measurement      Measurement? @relation(fields: [measurementId], references: [id])
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id               String      @id @default(cuid())
+  orderId          String
+  measurementId    String
+  config           Json
+  quantity         Int         @default(1)
+  unitAmount       Int         // In cents
+
+  order            Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   measurement      Measurement @relation(fields: [measurementId], references: [id])
 }
 
