@@ -73,28 +73,50 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "thoub-images")
 
 supabase: Optional[Client] = None
-if SUPABASE_URL and SUPABASE_KEY:
+cutter_service: Optional[Cutter] = None
+mirror_service: Optional[NeuralMirror] = None
+
+@app.on_event("startup")
+async def startup_event():
+    global supabase, cutter_service, mirror_service
+    print(f"DEBUG: Starting application with PORT: {os.getenv('PORT')}")
+    
+    # Initialize Supabase
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+            print("INFO: Supabase Initialized Successfully")
+        except Exception as e:
+            print(f"ERROR: Supabase Init Failed: {e}")
+
+    # Initialize Cutter (MediaPipe) in background/startup
     try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        cutter_service = Cutter()
+        print("INFO: Cutter Service Initialized Successfully")
     except Exception as e:
-        print(f"FAILED TO INITIALIZE SUPABASE: {e}")
-        supabase = None
+        print(f"ERROR: Cutter Service Init Failed: {e}")
 
-try:
-    cutter_service = Cutter()
-except Exception as e:
-    print(f"FAILED TO INITIALIZE CUTTER: {e}")
-    cutter_service = None
-
-try:
-    mirror_service = NeuralMirror()
-except Exception as e:
-    print(f"FAILED TO INITIALIZE MIRROR: {e}")
-    mirror_service = None
+    # Initialize Neural Mirror (Gemini)
+    try:
+        mirror_service = NeuralMirror()
+        print("INFO: Neural Mirror Service Initialized Successfully")
+    except Exception as e:
+        print(f"ERROR: Neural Mirror Service Init Failed: {e}")
 
 @app.get("/")
 def read_root():
-    return {"message": "Thoub-AI Backend Operational"}
+    return {
+        "message": "Thoub-AI Backend Operational",
+        "services": {
+            "cutter": cutter_service is not None,
+            "mirror": mirror_service is not None,
+            "supabase": supabase is not None
+        }
+    }
+
+@app.get("/ping")
+def ping():
+    return "pong"
 
 @app.get("/health")
 def health_check():
