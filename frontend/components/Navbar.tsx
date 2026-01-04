@@ -22,6 +22,7 @@ export default function Navbar() {
     const navLinks = [
         { name: 'Home', href: '/' },
         { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Orders', href: '/orders' },
         { name: 'Capture', href: '/capture' },
     ];
 
@@ -58,12 +59,6 @@ export default function Navbar() {
                     {session ? (
                         <div className="flex items-center gap-6 ml-2 border-l border-white/10 pl-6">
                             <CreditsDisplay />
-                            <Link
-                                href="/dashboard"
-                                className="text-[10px] uppercase tracking-widest text-white/60 hover:text-primary transition-colors font-black hidden lg:block"
-                            >
-                                Dashboard
-                            </Link>
                             <span className="text-[10px] uppercase tracking-widest text-primary/60 font-black hidden sm:block">
                                 {session.user?.name?.split(' ')[0]}
                             </span>
