@@ -39,10 +39,26 @@ origins = [
     "https://thoub-ai.vercel.app", 
 ]
 
+from fastapi import Request
+import time
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    print(f"DEBUG: Incoming {request.method} {request.url}")
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        print(f"DEBUG: Outgoing {response.status_code} (took {duration:.2f}s)")
+        return response
+    except Exception as e:
+        print(f"DEBUG: Request failed: {e}")
+        raise
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
