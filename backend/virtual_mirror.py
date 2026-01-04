@@ -7,13 +7,8 @@ load_dotenv()
 
 class NeuralMirror:
     def __init__(self):
-        # Configure Gemini
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
-            
-            # User-provided System Instruction for NanoBanana Pro
-            self.system_instruction = """
+        self._model = None
+        self.system_instruction = """
 (Masterpiece, best quality, 8k, UHD:1.3), hyper-realistic portrait of a male model (Image of model will be attached) using the attached image of the model, wearing a (luxurious straight Thoub:1.2), crisp tailoring, expensive fabric texture, standing against a (clean light brown beige najdi home background:1.1), fashion photography, Gucci and Hermes advertising style, quiet luxury, studio lighting, soft shadows, (hyper-detailed skin texture, visible pores, realistic complexion:1.4), intense eyes, shot on 85mm lens, f/1.8, cinematic lighting, sharp focus. Full body image.
 
 Recommended Settings for Realism:
@@ -28,19 +23,25 @@ Input 3: Type of collar
 
 only use attached model images.
             """
-            
-            try:
-                self.model = genai.GenerativeModel(
-                    model_name='models/nano-banana-pro-preview', # Using the verified model name
-                    system_instruction=self.system_instruction
-                )
-            except Exception as e:
-                print(f"Error init custom model: {e}. Fallback to Flash.")
-                self.model = genai.GenerativeModel('gemini-2.0-flash') # Fallback
-                
-        else:
-            print("Warning: GEMINI_API_KEY not found. Defaulting to Mock.")
-            self.model = None
+
+    @property
+    def model(self):
+        if self._model is None:
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if api_key:
+                print("INFO: Initializing Gemini model...")
+                genai.configure(api_key=api_key)
+                try:
+                    self._model = genai.GenerativeModel(
+                        model_name='models/nano-banana-pro-preview',
+                        system_instruction=self.system_instruction
+                    )
+                except Exception as e:
+                    print(f"Error init custom model: {e}. Fallback to Flash.")
+                    self._model = genai.GenerativeModel('gemini-2.0-flash')
+            else:
+                print("Warning: GEMINI_API_KEY not found.")
+        return self._model
 
     def generate_try_on(self, image_path: str, texture_id: str, pattern_id: str, style_config: str, closure_type: str, has_pocket: bool, extra_details: str, front_image_id: str = "custom_thoub", supabase_client=None, bucket_name="thoub-images"):
         if not self.model:

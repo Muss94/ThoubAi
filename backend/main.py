@@ -75,47 +75,21 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "thoub-images")
 import asyncio
 
 supabase: Optional[Client] = None
-cutter_service: Optional[Cutter] = None
-mirror_service: Optional[NeuralMirror] = None
-
-async def initialize_services():
-    global supabase, cutter_service, mirror_service
-    print("DEBUG: Background service initialization started...")
-    
-    # Initialize Supabase
-    if SUPABASE_URL and SUPABASE_KEY:
-        try:
-            supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-            print("INFO: Supabase Initialized Successfully")
-        except Exception as e:
-            print(f"ERROR: Supabase Init Failed: {e}")
-
-    # Initialize Cutter (MediaPipe)
+if SUPABASE_URL and SUPABASE_KEY:
     try:
-        cutter_service = Cutter()
-        print("INFO: Cutter Service Initialized Successfully")
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print(f"ERROR: Cutter Service Init Failed: {e}")
+        print(f"FAILED TO INITIALIZE SUPABASE: {e}")
 
-    # Initialize Neural Mirror (Gemini)
-    try:
-        mirror_service = NeuralMirror()
-        print("INFO: Neural Mirror Service Initialized Successfully")
-    except Exception as e:
-        print(f"ERROR: Neural Mirror Service Init Failed: {e}")
-
-@app.on_event("startup")
-async def startup_event():
-    print(f"DEBUG: Starting application on PORT: {os.getenv('PORT')}")
-    # Start initialization in the background so we don't block the health check
-    asyncio.create_task(initialize_services())
+cutter_service = Cutter()
+mirror_service = NeuralMirror()
 
 @app.get("/")
 def read_root():
     return {
         "message": "Thoub-AI Backend Operational",
         "status": "online",
-        "services": {
+        "services_initialized": {
             "cutter": cutter_service is not None,
             "mirror": mirror_service is not None,
             "supabase": supabase is not None

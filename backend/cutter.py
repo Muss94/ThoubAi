@@ -6,12 +6,19 @@ import math
 class Cutter:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=True,
-            model_complexity=2,
-            enable_segmentation=True,
-            min_detection_confidence=0.5
-        )
+        self._pose = None
+
+    @property
+    def pose(self):
+        if self._pose is None:
+            print("INFO: Loading MediaPipe Pose model...")
+            self._pose = self.mp_pose.Pose(
+                static_image_mode=True,
+                model_complexity=2,
+                enable_segmentation=True,
+                min_detection_confidence=0.5
+            )
+        return self._pose
 
     def process(self, image_content: bytes, true_height_cm: float, fit_type: str = "Standard"):
         # Decode image
