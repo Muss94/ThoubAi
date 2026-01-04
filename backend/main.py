@@ -58,7 +58,11 @@ SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "thoub-images")
 
 supabase: Optional[Client] = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"FAILED TO INITIALIZE SUPABASE: {e}")
+        supabase = None
 
 try:
     cutter_service = Cutter()
