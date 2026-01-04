@@ -306,31 +306,26 @@ function TryOnContent() {
         }
     };
 
-    const handleCheckout = async () => {
-        if (!generatedImage || !session?.user || !currentMeasurementId) return;
+    const handleBuyNow = async () => {
+        if (!currentMeasurementId) return;
 
-        setIsCheckingOut(true);
-        try {
-            const result = await createCheckoutSession({
-                measurementId: currentMeasurementId,
-                config: {
-                    fabric: selectedFabric,
-                    pattern: selectedPattern,
-                    style: selectedStyle,
-                    closure: closureType,
-                    pocket: hasPocket
-                }
-            });
+        const params = new URLSearchParams({
+            measurement_id: currentMeasurementId,
+            fabric: selectedFabric,
+            pattern: selectedPattern,
+            style: selectedStyle,
+            closure: closureType,
+            pocket: hasPocket.toString(),
+            thobe_length: measurements.length,
+            chest: measurements.chest,
+            sleeve: measurements.sleeve,
+            shoulder: measurements.shoulder,
+            height_cm: trueHeight.toString(),
+            front_image_id: frontImageId || '',
+            image_url: generatedImage || ''
+        });
 
-            if (result?.url) {
-                window.location.href = result.url;
-            }
-        } catch (error) {
-            console.error('Checkout failed:', error);
-            alert('Checkout failed. Please try again.');
-        } finally {
-            setIsCheckingOut(false);
-        }
+        router.push(`/checkout?${params.toString()}`);
     };
 
 
@@ -675,7 +670,7 @@ function TryOnContent() {
                                                     Export
                                                 </button>
                                                 <button
-                                                    onClick={handleCheckout}
+                                                    onClick={handleBuyNow}
                                                     disabled={isCheckingOut}
                                                     className="bg-primary text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)] flex items-center gap-2 group/checkout disabled:opacity-50 disabled:grayscale"
                                                 >

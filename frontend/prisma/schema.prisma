@@ -83,6 +83,7 @@ model Order {
   userId           String
   measurementId    String
   config           Json        // Stores fabric, collar, closure, etc.
+  shippingDetails  Json?       // Stores name, address, city, phone, etc.
   status           OrderStatus @default(PENDING)
   total            Int         // In cents
   stripeSessionId  String?     @unique
