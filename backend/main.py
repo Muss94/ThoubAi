@@ -228,12 +228,21 @@ async def try_on(
         image_path = f"uploads/{profile_image_id}"
         
         # If not local, try fetching from Supabase
-        if not os.path.exists(image_path) and supabase:
-            print(f"Image not found locally, fetching {profile_image_id} from Supabase...")
-            res = supabase.storage.from_(SUPABASE_BUCKET).download(profile_image_id)
-            os.makedirs("uploads", exist_ok=True)
-            with open(image_path, "wb") as f:
-                f.write(res)
+        if not os.path.exists(image_path):
+            if supabase:
+                try:
+                    print(f"DEBUG: Image not found locally, fetching {profile_image_id} from Supabase...")
+                    res = supabase.storage.from_(SUPABASE_BUCKET).download(profile_image_id)
+                    os.makedirs("uploads", exist_ok=True)
+                    with open(image_path, "wb") as f:
+                        f.write(res)
+                    print(f"DEBUG: Successfully downloaded {profile_image_id} from Supabase")
+                except Exception as se:
+                    print(f"DEBUG: Failed to download from Supabase: {se}")
+                    # If download fails, we can't proceed with Gemini
+                    return JSONResponse(status_code=404, content={"error": f"Image {profile_image_id} not found locally or in cloud storage."})
+            else:
+                return JSONResponse(status_code=404, content={"error": f"Image {profile_image_id} not found locally and Supabase is not configured."})
         
         if not os.path.exists(image_path):
              return JSONResponse(status_code=404, content={"error": f"Image not found at {image_path}"})
