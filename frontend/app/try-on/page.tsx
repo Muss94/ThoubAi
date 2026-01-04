@@ -675,7 +675,7 @@ function TryOnContent() {
                                                     className="bg-primary text-black px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)] flex items-center gap-2 group/checkout disabled:opacity-50 disabled:grayscale"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover/checkout:translate-x-0.5 transition-transform"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                                                    {isCheckingOut ? "Securing..." : "Secure Order"}
+                                                    {isCheckingOut ? "Moving to Checkout..." : "Buy Now"}
                                                 </button>
                                             </div>
                                         </div>

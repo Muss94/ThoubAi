@@ -149,12 +149,34 @@ export default async function DashboardPage() {
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
                                                     <span className="text-[8px] uppercase tracking-widest text-primary font-black mb-1">{(gen.config as any).style || 'Traditional'}</span>
                                                     <p className="text-[10px] text-white/60 font-medium line-clamp-2">{(gen.config as any).fabric} with {(gen.config as any).pattern}</p>
-                                                    <Link
-                                                        href={`/try-on?generation_id=${gen.id}`}
-                                                        className="mt-4 bg-primary text-black text-center py-2 rounded-xl text-[9px] font-black uppercase tracking-widest"
-                                                    >
-                                                        Re-customize
-                                                    </Link>
+                                                    <div className="flex flex-col gap-2 mt-4">
+                                                        <Link
+                                                            href={`/try-on?generation_id=${gen.id}`}
+                                                            className="bg-white/10 text-white text-center py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10"
+                                                        >
+                                                            Re-customize
+                                                        </Link>
+                                                        <Link
+                                                            href={`/checkout?${new URLSearchParams({
+                                                                measurement_id: gen.measurementId,
+                                                                fabric: (gen.config as any).fabric || 'White Cotton',
+                                                                pattern: (gen.config as any).pattern || 'Solid',
+                                                                style: (gen.config as any).style || 'Traditional',
+                                                                closure: (gen.config as any).closure || 'buttons',
+                                                                pocket: ((gen.config as any).pocket ?? true).toString(),
+                                                                thobe_length: gen.measurement.thobeLength.toString(),
+                                                                chest: gen.measurement.chest.toString(),
+                                                                sleeve: gen.measurement.sleeve.toString(),
+                                                                shoulder: gen.measurement.shoulder.toString(),
+                                                                height_cm: gen.measurement.heightCm.toString(),
+                                                                front_image_id: gen.measurement.frontImageId,
+                                                                image_url: gen.imageUrl
+                                                            }).toString()}`}
+                                                            className="bg-primary text-black text-center py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                                                        >
+                                                            Buy Now
+                                                        </Link>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <p className="mt-4 text-[9px] uppercase tracking-widest text-white/30 font-bold text-center" suppressHydrationWarning>
