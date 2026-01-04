@@ -84,6 +84,17 @@ if SUPABASE_URL and SUPABASE_KEY:
 cutter_service = Cutter()
 mirror_service = NeuralMirror()
 
+async def heartbeat():
+    while True:
+        print("DEBUG: HEARTBEAT - I AM ALIVE AND LISTENING")
+        await asyncio.sleep(5)
+
+@app.on_event("startup")
+async def startup_event():
+    print(f"DEBUG: Starting application on PORT: {os.getenv('PORT')}")
+    # Start heartbeat
+    asyncio.create_task(heartbeat())
+
 @app.get("/")
 def read_root():
     return {
