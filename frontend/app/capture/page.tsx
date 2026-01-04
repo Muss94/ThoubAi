@@ -156,9 +156,9 @@ export default function CapturePage() {
                     userId: session.user.id || "",
                     userEmail: session.user.email,
                     heightCm: heightCm,
-                    frontImageId: data.image_ids.front,
-                    sideImageId: data.image_ids.side || undefined,
-                    profileImageId: data.image_ids.profile,
+                    frontImageId: data.image_ids.front_url || data.image_ids.front,
+                    sideImageId: data.image_ids.side_url || data.image_ids.side || undefined,
+                    profileImageId: data.image_ids.profile_url || data.image_ids.profile,
                     measurements: {
                         thobeLength: data.measurements.thobe_length,
                         chest: data.measurements.chest_circumference,
@@ -172,8 +172,8 @@ export default function CapturePage() {
                 }
 
                 // 2. SYNC PROFILE IMAGE TO ACCOUNT
-                if (data.image_ids.profile) {
-                    await updateUserProfileImage(data.image_ids.profile);
+                if (data.image_ids.profile_url) {
+                    await updateUserProfileImage(data.image_ids.profile_url);
                 }
             }
 

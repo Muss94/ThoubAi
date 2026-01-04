@@ -199,10 +199,14 @@ async def measure_body(
                 print(f"DEBUG: Supabase upload during measure notice: {se}")
 
         # Add image_ids to result for frontend to pass back
+        # We'll provide BOTH the filename (as ID) and the full URL for display
         result["image_ids"] = {
             "front": front_filename,
             "side": side_filename,
-            "profile": profile_filename
+            "profile": profile_filename,
+            "front_url": supabase.storage.from_(SUPABASE_BUCKET).get_public_url(front_filename) if supabase else f"/uploads/{front_filename}",
+            "side_url": supabase.storage.from_(SUPABASE_BUCKET).get_public_url(side_filename) if side_filename and supabase else (f"/uploads/{side_filename}" if side_filename else None),
+            "profile_url": supabase.storage.from_(SUPABASE_BUCKET).get_public_url(profile_filename) if supabase else f"/uploads/{profile_filename}"
         }
         
         return result

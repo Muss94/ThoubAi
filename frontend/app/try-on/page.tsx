@@ -28,6 +28,9 @@ function TryOnContent() {
     const [showRevealModal, setShowRevealModal] = useState(true);
     const [isCustomizing, setIsCustomizing] = useState(false);
     const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+    const [frontImageId, setFrontImageId] = useState<string | null>(null);
+    const [profileImageId, setProfileImageId] = useState<string | null>(null);
+    const [trueHeight, setTrueHeight] = useState<number>(170);
 
     // Initial state hydration
     useEffect(() => {
@@ -54,6 +57,11 @@ function TryOnContent() {
 
                     // Hydrate measurements if available
                     if (gen.measurement) {
+                        setCurrentMeasurementId(gen.measurement.id);
+                        setFrontImageId(gen.measurement.frontImageId);
+                        setProfileImageId(gen.measurement.profileImageId);
+                        setTrueHeight(gen.measurement.heightCm);
+
                         setMeasurements({
                             length: gen.measurement.thobeLength.toString(),
                             chest: gen.measurement.chest.toString(),
@@ -72,6 +80,9 @@ function TryOnContent() {
                 if (passedId) {
                     setCurrentMeasurementId(passedId);
                 }
+                setFrontImageId(searchParams.get('front_image_id'));
+                setProfileImageId(searchParams.get('profile_image_id'));
+                setTrueHeight(parseFloat(searchParams.get('height_cm') || '170'));
             }
         }
 
@@ -139,18 +150,28 @@ function TryOnContent() {
             return;
         }
 
-        const frontImageId = searchParams.get('front_image_id'); // Still needed for measurements
-        const profileImageId = searchParams.get('profile_image_id'); // New ID for AI generation
-        const heightCm = parseFloat(searchParams.get('height_cm') || '170');
+        const fId = searchParams.get('front_image_id') || frontImageId;
+        const pId = searchParams.get('profile_image_id') || profileImageId;
+        const hCm = parseFloat(searchParams.get('height_cm') || trueHeight.toString());
 
-        if (!profileImageId) {
+        if (!pId) {
             alert("No profile image found. Please go back to Capture.");
             return;
         }
 
+        // Extract filename if it's a URL (Backend expects filename for download)
+        const extractId = (val: string) => {
+            if (val.startsWith('http')) {
+                return val.split('/').pop() || val;
+            }
+            return val;
+        };
+
+        const finalProfileImageId = extractId(pId);
+
         setLoading(true);
         const formData = new FormData();
-        formData.append("profile_image_id", profileImageId);
+        formData.append("profile_image_id", finalProfileImageId);
         formData.append("texture_id", selectedFabric);
         formData.append("pattern_id", selectedPattern);
         formData.append("style_config", selectedStyle);
@@ -202,15 +223,15 @@ function TryOnContent() {
                     const measResult = await saveUserMeasurements({
                         userId: session.user.id || "",
                         userEmail: session.user.email!,
-                        heightCm,
-                        frontImageId,
+                        heightCm: hCm,
+                        frontImageId: fId || "",
                         sideImageId: searchParams.get('side_image_id') || undefined,
-                        profileImageId,
+                        profileImageId: pId || "",
                         measurements: {
-                            thobeLength: parseFloat(searchParams.get('thobe_length') || '0'),
-                            chest: parseFloat(searchParams.get('chest') || '0'),
-                            sleeve: parseFloat(searchParams.get('sleeve') || '0'),
-                            shoulder: parseFloat(searchParams.get('shoulder') || '0'),
+                            thobeLength: parseFloat(searchParams.get('thobe_length') || measurements.length),
+                            chest: parseFloat(searchParams.get('chest') || measurements.chest),
+                            sleeve: parseFloat(searchParams.get('sleeve') || measurements.sleeve),
+                            shoulder: parseFloat(searchParams.get('shoulder') || measurements.shoulder),
                         }
                     });
 
@@ -273,8 +294,6 @@ function TryOnContent() {
         }
     };
 
-    const frontImageId = searchParams.get('front_image_id');
-    const sideImageId = searchParams.get('side_image_id');
 
     // Auto-generate on first load if we have specific params or logic? 
     // Usually we wait for user, but here we might want to auto-trigger if customizing?

@@ -20,11 +20,8 @@ export default function ProfileImageUploader({ measurementId, existingImageId }:
         // If it's already a full URL, use it
         if (existingImageId.startsWith('http')) return existingImageId;
 
-        // Default to backend uploads (for immediate feedback/local dev)
-        // BUT also provide a fallback to Supabase if the backend is ephemeral (Railway)
-        // We construct the Supabase URL using the bucket name and the public endpoint
-        const supabaseUrl = "https://fuznxmufidubxsqpuegh.supabase.co/storage/v1/object/public/thoub-images";
-        return `${supabaseUrl}/${existingImageId}`;
+        // Fallback for legacy local/filename records
+        return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${existingImageId}`;
     };
 
     const imageUrl = getImageUrl();
@@ -52,9 +49,16 @@ export default function ProfileImageUploader({ measurementId, existingImageId }:
 
             const data = await res.json();
 
-            if (data.success && data.filename) {
-                // 2. Update Measurement Record
-                const updateRes = await updateMeasurementProfileImage(measurementId, data.filename);
+            if (data.success && (data.url || data.filename)) {
+                // 2. Update Measurement Record (Use URL for persistence)
+                const persistentId = data.url || data.filename;
+                const updateRes = await updateMeasurementProfileImage(measurementId, persistentId);
+
+                // 3. sync with user account as well
+                const syncRes = await fetch('/api/user/sync-profile', {
+                    method: 'POST',
+                    body: JSON.stringify({ image: persistentId })
+                });
 
                 if (updateRes.success) {
                     router.refresh(); // Refresh to show new image
