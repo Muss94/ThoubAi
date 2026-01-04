@@ -13,10 +13,21 @@ export default function ProfileImageUploader({ measurementId, existingImageId }:
     const router = useRouter();
     const [uploading, setUploading] = useState(false);
 
-    // If we have an existing image ID, it's served from our backend uploads directory
-    const imageUrl = existingImageId
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${existingImageId}`
-        : null;
+    // URL Resolution: Support both local dev and persistent Supabase storage
+    const getImageUrl = () => {
+        if (!existingImageId) return null;
+
+        // If it's already a full URL, use it
+        if (existingImageId.startsWith('http')) return existingImageId;
+
+        // Default to backend uploads (for immediate feedback/local dev)
+        // BUT also provide a fallback to Supabase if the backend is ephemeral (Railway)
+        // We construct the Supabase URL using the bucket name and the public endpoint
+        const supabaseUrl = "https://fuznxmufidubxsqpuegh.supabase.co/storage/v1/object/public/thoub-images";
+        return `${supabaseUrl}/${existingImageId}`;
+    };
+
+    const imageUrl = getImageUrl();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

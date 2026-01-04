@@ -169,18 +169,35 @@ async def measure_body(
         profile_path = convert_heic_to_jpg(profile_path)
         profile_filename = os.path.basename(profile_path)
 
-        # Process measurements (still using in-memory bytes for Cutter for speed, or read from disk)
-        # We'll read from disk to be consistent or just re-open. 
-        # For Cutter.process, it takes bytes. Let's read from file.
+        # Process measurements
         with open(front_path, "rb") as f:
             front_content = f.read()
             
         cutter = get_cutter_service()
         if not cutter:
-            raise HTTPException(status_code=503, detail="Cutter service is not available (MediaPipe initialization failed)")
+             raise HTTPException(status_code=503, detail="Cutter service is not available (MediaPipe initialization failed)")
             
         result = cutter.process(front_content, height_cm, fit_type)
         
+        # 4. UPLOAD TO SUPABASE (Persistence)
+        if supabase:
+            try:
+                for filename, path in [
+                    (front_filename, front_path),
+                    (side_filename, side_path),
+                    (profile_filename, profile_path)
+                ]:
+                    if path and os.path.exists(path):
+                        with open(path, "rb") as f:
+                            supabase.storage.from_(SUPABASE_BUCKET).upload(
+                                path=filename,
+                                file=f,
+                                file_options={"upsert": "true"}
+                            )
+                print(f"DEBUG: All images uploaded to Supabase successfully")
+            except Exception as se:
+                print(f"DEBUG: Supabase upload during measure notice: {se}")
+
         # Add image_ids to result for frontend to pass back
         result["image_ids"] = {
             "front": front_filename,

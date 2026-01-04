@@ -33,7 +33,7 @@ only use attached model images.
                 genai.configure(api_key=api_key)
                 try:
                     self._model = genai.GenerativeModel(
-                        model_name='models/nano-banana-pro-preview',
+                        model_name='gemini-1.5-flash',
                         system_instruction=self.system_instruction
                     )
                 except Exception as e:
