@@ -17,10 +17,18 @@ export default function TopUpModal({ isOpen, onClose, type }: TopUpModalProps) {
     const handleTopUp = async () => {
         setLoading(true);
         try {
-            await createTopUpSession();
-        } catch (error) {
+            const result = await createTopUpSession();
+
+            if (result?.url) {
+                window.location.href = result.url;
+            } else if (result?.error) {
+                alert(`Top-up error: ${result.error}`);
+            } else {
+                alert('An unexpected error occurred. No session URL returned.');
+            }
+        } catch (error: any) {
             console.error('Top-up error:', error);
-            alert('Failed to initiate top-up. Please try again.');
+            alert(`Failed to initiate top-up: ${error.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }

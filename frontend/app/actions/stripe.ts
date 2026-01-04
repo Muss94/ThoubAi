@@ -1,25 +1,14 @@
 'use server';
 
-import Stripe from 'stripe';
 import { auth } from '@/auth';
 import { headers } from 'next/headers';
-
-const getStripe = () => {
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
-        throw new Error('STRIPE_SECRET_KEY is not configured in environment variables');
-    }
-    return new Stripe(key, {
-        apiVersion: '2024-12-18.acacia' as any,
-    });
-};
+import { stripe, getBaseUrl } from '@/lib/stripe';
 
 export async function createTopUpSession() {
     try {
         console.log('Initiating top-up session...');
-        const stripe = getStripe();
         const headersList = await headers();
-        const origin = headersList.get('origin') || process.env.NEXTAUTH_URL;
+        const origin = getBaseUrl(headersList);
 
         console.log('User auth session check...');
         const session = await auth();

@@ -1,13 +1,9 @@
 'use server';
 
-import Stripe from 'stripe';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia' as any,
-});
+import { stripe, getBaseUrl } from '@/lib/stripe';
 
 export async function createCheckoutSession(data: {
     measurementId: string;
@@ -26,7 +22,9 @@ export async function createCheckoutSession(data: {
     }
 
     try {
-        const origin = (await headers()).get('origin');
+        const headersList = await headers();
+        const origin = getBaseUrl(headersList);
+        console.log('Using origin for checkout callbacks:', origin);
 
         // Verify measurement exists and belongs to user
         const measurement = await prisma.measurement.findUnique({
