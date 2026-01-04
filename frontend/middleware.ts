@@ -1,25 +1,7 @@
-import { auth } from "@/auth"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import NextAuth from "next-auth"
+import { authConfig } from "./auth.config"
 
-export async function middleware(request: NextRequest) {
-    const session = await auth()
-
-    // Protected routes that require authentication
-    const protectedRoutes = ['/capture', '/try-on', '/dashboard']
-    const isProtectedRoute = protectedRoutes.some(route =>
-        request.nextUrl.pathname.startsWith(route)
-    )
-
-    // If accessing a protected route without authentication, redirect to sign-in
-    if (isProtectedRoute && !session) {
-        const signInUrl = new URL('/auth/signin', request.url)
-        signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname + request.nextUrl.search)
-        return NextResponse.redirect(signInUrl)
-    }
-
-    return NextResponse.next()
-}
+export default NextAuth(authConfig).auth
 
 export const config = {
     matcher: [

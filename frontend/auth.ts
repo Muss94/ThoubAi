@@ -3,8 +3,10 @@ import Credentials from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { authConfig } from "./auth.config"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     adapter: PrismaAdapter(prisma),
     session: {
         strategy: "jwt", // Use JWT for credentials provider compatibility
@@ -50,37 +52,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
         }),
     ],
-    pages: {
-        signIn: "/auth/signin",
-        error: "/auth/signin",
-    },
-    callbacks: {
-        async jwt({ token, user }) {
-            // On initial sign in, add user id to token
-            if (user) {
-                token.id = user.id;
-            }
-            return token;
-        },
-        async session({ session, token }) {
-            if (session.user && token.id) {
-                session.user.id = token.id as string;
-            }
-            return session;
-        },
-        authorized({ auth, request: { nextUrl } }) {
-            const isLoggedIn = !!auth?.user;
-            const protectedRoutes = ['/capture', '/try-on', '/dashboard'];
-            const isProtectedRoute = protectedRoutes.some(route =>
-                nextUrl.pathname.startsWith(route)
-            );
-
-            if (isProtectedRoute && !isLoggedIn) {
-                return false; // Redirect to login
-            }
-            return true;
-        },
-    },
     events: {
         async createUser({ user }) {
             // When a new user is created via OAuth, give them starter credits
