@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { saveUserMeasurements, saveGeneration, getGenerationData } from '@/app/actions/measurements';
+import { saveUserMeasurements, saveGeneration, getGenerationData, getMeasurementData } from '@/app/actions/measurements';
 import { createCheckoutSession } from '@/app/actions/checkout';
 import { checkGenerationCredits, deductGenerationCredit } from '@/app/actions/credits';
 import TopUpModal from '@/components/TopUpModal';
@@ -25,7 +25,7 @@ function TryOnContent() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [currentMeasurementId, setCurrentMeasurementId] = useState<string | null>(null);
-    const [showRevealModal, setShowRevealModal] = useState(true);
+    const [showRevealModal, setShowRevealModal] = useState(false);
     const [isCustomizing, setIsCustomizing] = useState(false);
     const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
     const [frontImageId, setFrontImageId] = useState<string | null>(null);
@@ -68,21 +68,49 @@ function TryOnContent() {
                             sleeve: gen.measurement.sleeve.toString(),
                             shoulder: gen.measurement.shoulder.toString(),
                         });
-                        // Also hide the reveal modal since we are re-visiting
+                        // Hide reveal modal for re-visits
                         setShowRevealModal(false);
                         setIsCustomizing(true);
                     }
                 }
                 setLoading(false);
             } else {
-                // Not a re-visit, check for passed measurement_id from capture
+                // Not a generation re-visit, check for passed measurement_id
                 const passedId = searchParams.get('measurement_id');
+                const urlLength = searchParams.get('thobe_length');
+
                 if (passedId) {
                     setCurrentMeasurementId(passedId);
+
+                    // If we have ID but NO measurements in URL, fetch from DB
+                    if (!urlLength) {
+                        setLoading(true);
+                        const mResult = await getMeasurementData(passedId);
+                        if (mResult.success && mResult.measurement) {
+                            const m = mResult.measurement;
+                            setMeasurements({
+                                length: m.thobeLength.toString(),
+                                chest: m.chest.toString(),
+                                sleeve: m.sleeve.toString(),
+                                shoulder: m.shoulder.toString(),
+                            });
+                            setFrontImageId(m.frontImageId);
+                            setProfileImageId(m.profileImageId);
+                            setTrueHeight(m.heightCm);
+                            setIsCustomizing(true);
+                        }
+                        setLoading(false);
+                    } else {
+                        // We have measurements in URL, this is a fresh capture reveal
+                        setShowRevealModal(true);
+                        setIsCustomizing(true);
+                    }
                 }
-                setFrontImageId(searchParams.get('front_image_id'));
-                setProfileImageId(searchParams.get('profile_image_id'));
-                setTrueHeight(parseFloat(searchParams.get('height_cm') || '170'));
+
+                // Always sync these if in URL
+                if (searchParams.get('front_image_id')) setFrontImageId(searchParams.get('front_image_id'));
+                if (searchParams.get('profile_image_id')) setProfileImageId(searchParams.get('profile_image_id'));
+                if (searchParams.get('height_cm')) setTrueHeight(parseFloat(searchParams.get('height_cm') || '170'));
             }
         }
 

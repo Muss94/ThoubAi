@@ -64,6 +64,29 @@ export async function saveUserMeasurements(data: {
     }
 }
 
+export async function getMeasurementData(measurementId: string) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const measurement = await prisma.measurement.findUnique({
+            where: { id: measurementId },
+        });
+
+        if (!measurement || measurement.userId !== session.user.id) {
+            return { success: false, error: "Measurement not found" };
+        }
+
+        return { success: true, measurement };
+    } catch (error) {
+        console.error("Prisma Fetch Error:", error);
+        return { success: false, error: "Failed to retrieve measurement" };
+    }
+}
+
 export async function saveGeneration(data: {
     measurementId: string;
     imageUrl: string;

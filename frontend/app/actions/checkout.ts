@@ -53,7 +53,7 @@ export async function createCheckoutSession(data: {
             ],
             mode: 'payment',
             success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/try-on?front_image_id=${measurement.frontImageId}`,
+            cancel_url: `${origin}/try-on?measurement_id=${measurement.id}&front_image_id=${measurement.frontImageId}&thobe_length=${measurement.thobeLength}&chest=${measurement.chest}&sleeve=${measurement.sleeve}&shoulder=${measurement.shoulder}&height_cm=${measurement.heightCm}`,
             customer_email: session.user.email!,
             metadata: {
                 userId: session.user.id,
