@@ -81,8 +81,7 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"FAILED TO INITIALIZE SUPABASE: {e}")
 
-cutter_service = Cutter()
-mirror_service = NeuralMirror()
+
 
 async def heartbeat():
     while True:
