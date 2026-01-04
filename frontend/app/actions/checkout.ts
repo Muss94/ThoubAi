@@ -110,3 +110,34 @@ export async function createCheckoutSession(data: {
         return { error: error.message || 'Payment initiation failed' };
     }
 }
+
+export async function getUserOrders() {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        const orders = await prisma.order.findMany({
+            where: {
+                userId: session.user.id,
+            },
+            include: {
+                items: {
+                    include: {
+                        measurement: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        return { orders };
+    } catch (error) {
+        console.error('Fetch Orders Error:', error);
+        return { error: 'Failed to synchronize artisan ledger' };
+    }
+}
