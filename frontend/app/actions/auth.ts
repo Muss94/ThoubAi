@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/email";
 
 /**
  * Register a new user with email and password
@@ -41,6 +41,9 @@ export async function registerUser(data: {
                 generationCredits: 3,
             }
         });
+
+        // Send Welcome Email
+        await sendWelcomeEmail(data.email, data.name);
 
         return { success: true, userId: user.id };
     } catch (error) {
